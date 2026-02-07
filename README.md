@@ -14,24 +14,7 @@ Millions of people fall asleep listening to YouTube -- podcasts, audiobooks, ASM
 
 ## What Sleep Mode Does
 
-One click. No configuration. The extension processes YouTube audio in real time through a professional broadcast-grade signal chain:
-
-```
-Source -> Vocal Separator -> EQ -> Normalizer -> Compressor -> Limiter -> True Peak -> Output
-```
-
-Every stage is designed around one principle: **audio can only get quieter and smoother, never louder or harsher.**
-
-## Features
-
-| Feature | How It Works |
-|---------|-------------|
-| Volume normalization | EBU R128 LUFS measurement with 3-second window. Brings all content to a consistent loudness. |
-| Transient protection | Fast RMS compressor (100ms window, 15ms attack) catches sudden laughs, coughs, and sound effects before they reach your ears. |
-| Peak limiting | Lookahead limiter + true peak limiter with 4x oversampling. Nothing exceeds the safety ceiling. |
-| Background music reduction | STFT-based mid/side vocal separator isolates speech from background music. |
-| Speed & pitch adjustment | Native browser resampling (`preservesPitch=false`) slows speech and lowers pitch for a warmer, more soothing tone. |
-| Warm EQ | High-frequency rolloff and low-pass filtering remove harshness. |
+One click. The extension processes YouTube audio in real time through a broadcast-grade signal chain, making everything quieter, smoother, and more consistent. Every processing stage is designed around one principle: **audio can only get quieter and smoother, never louder or harsher.**
 
 ## Installation
 
@@ -57,24 +40,144 @@ The `dist/` folder is included in the repo. You can load it directly into Chrome
 
 ## Usage
 
-1. **Enable**: Click the extension icon on any YouTube video, then tap the power button
-2. **Choose a preset**: Pick the mode that matches your content
-3. **That's it**: Everything adjusts automatically
+1. Navigate to any YouTube video
+2. Click the Sleep Mode extension icon in the toolbar
+3. Tap the moon button to activate
+4. Choose the preset that matches your content
+5. Done -- everything adjusts automatically
 
-No sliders to tweak, no settings to configure. The presets are designed to work out of the box.
+The popup shows real-time status while Sleep Mode is active: a green "PROCESSING" indicator confirms audio is being processed.
 
 ## Presets
 
-| Preset | Best For | What It Does |
-|--------|----------|-------------|
-| **Sleep** | Podcasts, audiobooks, guided meditations | -26 LUFS target, 6% slower playback, warm EQ (high shelf -4dB), vocal separator ON, aggressive transient compression (6:1) |
-| **ASMR** | Whisper content, tapping, scratching | -28 LUFS target (quietest), full frequency spectrum preserved, no speed change, aggressive compression (6:1) |
-| **Podcast** | Talk shows, interviews, lectures | -24 LUFS target, vocal separator with +3dB voice boost, 6% slower, moderate compression (3:1) |
-| **White Noise** | Rain, ocean, fan sounds, ambient | -26 LUFS target, EQ disabled (pure signal), no speed change, light compression (3:1) |
+Sleep Mode ships with four presets, each fine-tuned for a specific type of content. Select a preset and all audio parameters are set automatically -- no knobs to turn.
 
-### Loudness Ranking (quietest to loudest)
+### Sleep
 
-ASMR (-28) < Sleep (-26) = White Noise (-26) < Podcast (-24)
+**Best for:** Podcasts, audiobooks, guided meditations, talk-heavy videos
+
+This is the default and most aggressive preset. It is designed to create a warm, steady audio blanket that won't disturb you as you drift off.
+
+What it does:
+
+- **Slows playback by 6%** (0.94x speed). Speech becomes slightly slower and voices drop in pitch, creating a more relaxed, deeper tone. This uses the browser's native resampling -- no artifacts, just naturally warmer sound.
+- **Normalizes volume to -26 LUFS.** This is noticeably quieter than YouTube's default (~-14 LUFS). Volume differences between speakers, segments, and videos are smoothed out automatically.
+- **Aggressive transient compression** (6:1 ratio, 15ms attack). Sudden spikes -- a laugh, a cough, a sound effect, an ad transition -- are caught and reduced within milliseconds. This is the core "anti-jolt" feature.
+- **Warm EQ.** A high-shelf filter at 6kHz rolls off the upper frequencies by 4dB, softening sibilance ("s" sounds), cymbal splashes, and other harsh high-frequency content. An 80Hz high-pass filter removes low rumble.
+- **Vocal separator ON.** Background music is reduced by 6dB while the human voice passes through untouched, making speech clearer even at low volume.
+- **Master output at -6dB** (50% volume). An extra safety net ensuring the final output is well below full scale.
+
+When to choose Sleep: you are listening to someone talk, and you want to fall asleep to their voice without being startled by anything.
+
+### ASMR
+
+**Best for:** Whisper content, tapping, scratching, mouth sounds, ear-to-ear audio
+
+ASMR content is already produced with sleep in mind, so this preset applies the lightest touch. The goal is to normalize volume without destroying the delicate textures that make ASMR work.
+
+What it does:
+
+- **No speed change** (1.0x). ASMR relies on precise timing and rhythm. Slowing it would break the trigger.
+- **Normalizes volume to -28 LUFS.** The quietest preset -- 2dB below Sleep. Whisper content stays at whisper volume.
+- **Aggressive transient compression** (6:1 ratio, -26dB threshold). Even in ASMR videos, some triggers can be unexpectedly loud (tapping, crinkles). The compressor keeps these in check.
+- **Full-spectrum EQ.** No high-pass filter, no frequency cuts. ASMR relies on subtle sub-bass vibrations and high-frequency detail that would be lost with aggressive EQ. Everything passes through.
+- **Vocal separator OFF.** ASMR has no "background music" to separate. The triggers themselves are the content.
+- **Extra-low limiter threshold** (-6dB). Catches any remaining peaks more aggressively, because ASMR listeners are often in the most quiet, sensitive listening state.
+- **Master output at -6dB.**
+
+When to choose ASMR: you are listening to whisper or texture-based content and want consistent volume without altering the sound character.
+
+### Podcast
+
+**Best for:** Talk shows, interviews, lectures, news commentary, multi-speaker content
+
+Podcast mode optimizes for speech clarity. It is the loudest preset -- designed for situations where you want to actually follow the conversation while still having volume protection.
+
+What it does:
+
+- **Slows playback by 6%** (0.94x speed). Like Sleep, this makes speech easier to follow when drowsy. The slight pitch drop adds warmth.
+- **Normalizes volume to -24 LUFS.** Louder than Sleep and ASMR. You can hear the content clearly at low physical volume. Different speakers and segments are leveled automatically.
+- **Gentle compression** (3:1 ratio, -20dB threshold, 20ms attack, soft 8dB knee). Less aggressive than Sleep -- preserves more of the natural dynamic range of conversation. Still catches sudden spikes, but lets normal emphasis through.
+- **Voice-forward EQ.** A low-shelf cut at 300Hz (-3dB) reduces "muddy" low-mid frequencies that make speech less intelligible, especially on small speakers or earbuds. High frequencies are untouched to preserve vocal clarity.
+- **Vocal separator ON with +3dB voice boost.** Background music is reduced by 6dB, AND the human voice is actively boosted by 3dB. This makes the speaker significantly more prominent in the mix -- ideal for podcasts with music beds, intros, or interview crosstalk.
+- **Master output at -3dB.** Slightly louder output than Sleep/ASMR, matching the "still awake, still listening" use case.
+- **Higher true peak ceiling** (-1dBTP vs -2dBTP). Allows slightly more headroom since podcast listeners are less sensitive to occasional near-peak moments.
+
+When to choose Podcast: you want to follow the conversation but with consistent volume and protection from sudden noise. Good for "I'm in bed but not trying to fall asleep yet" moments.
+
+### White Noise
+
+**Best for:** Rain sounds, ocean waves, fan noise, ambient environments, nature recordings, lo-fi beats
+
+White noise and ambient content is already smooth by nature. This preset normalizes volume with minimal processing to preserve the pure, unaltered character of the sound.
+
+What it does:
+
+- **No speed change** (1.0x). Ambient sounds should play at their natural tempo.
+- **Normalizes volume to -26 LUFS.** Same quiet target as Sleep. Ensures consistent volume across different ambient videos.
+- **Gentle compression** (3:1 ratio, -22dB threshold). Light touch -- ambient content rarely has transients, but some nature recordings have occasional bird calls, thunder, or waves that can spike. The compressor gently smooths these.
+- **EQ disabled.** No frequency shaping at all. Rain should sound like rain, not like filtered rain. The audio passes through spectrally untouched.
+- **Vocal separator OFF.** There is no voice to separate. The ambient sound is the content.
+- **Low limiter threshold** (-6dB). Extra safety for occasional peaks.
+- **Master output at -3dB.**
+
+When to choose White Noise: you are playing ambient or environmental sounds and want steady volume without any coloring of the sound.
+
+### Preset Comparison
+
+| | Sleep | ASMR | Podcast | White Noise |
+|---|---|---|---|---|
+| Target loudness | -26 LUFS | -28 LUFS | -24 LUFS | -26 LUFS |
+| Playback speed | 0.94x | 1.0x | 0.94x | 1.0x |
+| Compression | 6:1 aggressive | 6:1 aggressive | 3:1 gentle | 3:1 gentle |
+| EQ character | Warm (highs -4dB) | Flat (full spectrum) | Voice-forward (lows -3dB) | Disabled |
+| Vocal separator | ON (music -6dB) | OFF | ON (voice +3dB, music -6dB) | OFF |
+| Master output | -6dB | -6dB | -3dB | -3dB |
+
+**Loudness ranking** (quietest to loudest): ASMR (-28) < Sleep (-26) = White Noise (-26) < Podcast (-24)
+
+## Controls
+
+### Sleep EQ
+
+A toggle that enables or disables the preset's EQ profile. When ON, the frequency shaping described in each preset above is active. When OFF, no EQ is applied -- audio passes through with its original frequency balance.
+
+Tip: If a preset sounds too muffled or too bright for your taste, try toggling Sleep EQ off. The normalizer and compressor still work regardless.
+
+### Vocal Enhance
+
+A toggle that enables or disables the vocal separator. When ON, background music is reduced and (depending on the preset) the human voice may be boosted. When OFF, all audio passes through equally.
+
+Note: Vocal Enhance is most effective with content that has a clear voice + music separation (podcasts with background music, talk shows with intro music). It has no meaningful effect on solo voice recordings or ambient content.
+
+## Meters
+
+The bottom of the popup shows three real-time meters that update ~10 times per second:
+
+### LUFS
+
+The current measured loudness of the input signal in LUFS (Loudness Units Full Scale), using the EBU R128 / BS.1770 standard with K-weighting. This is the value the normalizer uses to decide how much to attenuate.
+
+- Typical YouTube content reads between **-10 to -20 LUFS**
+- The normalizer targets the preset's LUFS value (e.g., -26 for Sleep)
+- If the reading matches the target, normalization is working correctly
+
+### Gain Reduction
+
+How much the compressor, limiter, and true peak limiter are collectively reducing the signal, in dB. This tells you how hard the dynamics processing is working.
+
+- **0.0 dB**: No compression happening -- the audio is already below all thresholds
+- **1-3 dB**: Normal operation -- gentle compression smoothing things out
+- **3-6 dB**: Moderate compression -- the compressor is actively taming louder passages
+- **6+ dB**: Heavy compression -- a loud transient was caught and significantly reduced
+
+### Input Peak
+
+The peak level of the raw audio entering the worklet processor, in dBFS (decibels relative to full scale). This is a diagnostic value.
+
+- **-inf dB**: No audio signal is reaching the processor (check if the video is playing)
+- **-30 to -10 dB**: Normal operating range for most content
+- **Above -6 dB**: Very hot signal -- the compressor and limiter will be working hard
 
 ## Technical Details
 
@@ -87,7 +190,7 @@ YouTube <video> element
     |
     Vocal Separator (AudioWorklet: STFT mid/side, 2048-point FFT)
     |
-    High-Pass Filter (BiquadFilterNode, 80Hz)
+    High-Pass Filter (BiquadFilterNode)
     |
     3-Band EQ (BiquadFilterNode x3: low shelf, peaking, high shelf)
     |
@@ -106,7 +209,7 @@ YouTube <video> element
 
 - **No DynamicsCompressorNode**: The Web Audio built-in compressor has automatic makeup gain that cannot be disabled, causing loudness increases. We use custom worklet implementations instead.
 - **Normalizer measures raw input**: The LUFS measurement runs on the unprocessed signal, and gain is applied separately. This prevents feedback loops with downstream stages.
-- **Conditional boost**: The normalizer only boosts signals quieter than -35 LUFS (genuinely silent content). Normal and loud content can only be attenuated.
+- **Conditional boost**: The normalizer only boosts signals quieter than -35 LUFS (genuinely silent content). Normal and loud content can only be attenuated, never amplified.
 - **Native pitch shifting**: Instead of DSP-based pitch algorithms (which produce artifacts in 128-sample AudioWorklet blocks), we use `video.playbackRate` with `preservesPitch=false` for artifact-free pitch reduction via the browser's native C++ resampler.
 
 ### Architecture
