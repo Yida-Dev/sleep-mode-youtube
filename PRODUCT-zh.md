@@ -458,3 +458,25 @@ sleep-mode-extension/
   dist/                       # 预构建输出（可直接加载到 Chrome）
   assets/icons/               # 扩展图标 (16, 48, 128px)
 ```
+
+## 10. 桌面版探索
+
+在构建 Chrome 扩展之前，我们探索了 **跨平台桌面方案**，使用 Tauri（Rust + React）在操作系统层面捕获系统音频。桌面版作为独立仓库发布：**[sleep-mode-desktop](https://github.com/Yida-Dev/sleep-mode-desktop)**。
+
+### 我们学到了什么
+
+桌面原型用 8 级纯 Rust DSP 管线（4400+ 行，无外部 DSP 库）验证了我们的 DSP 架构：人声分离器、前瞻限制器、RMS 压缩器、响度标准化器、睡眠 EQ、时间拉伸、音调变换、真峰值限制器。关键技术成果：
+
+- **WSOLA 时间拉伸**，支持独立的速度/音调控制（浏览器 AudioWorklet 的 128 采样块中无法实现）
+- **组合式变调**：时间拉伸 + 重采样，优雅的模块复用而非专用算法
+- **无 ML 人声分离**：STFT 频谱掩蔽，<1KB 代码，<5ms 延迟
+- **macOS Core Audio Taps**（14.2+）：无需虚拟驱动的系统音频捕获
+- **总延迟低于 10ms**，通过 8 级管线全链路单元测试验证
+
+### 为什么扩展胜出
+
+桌面应用需要系统级音频捕获（macOS 的 CoreAudio Taps、Windows 的 WASAPI Loopback + VB-CABLE），带来显著的安装摩擦和未解决的权限问题。Chrome 扩展通过直接访问 `<video>` 元素实现零权限需求，用 DSP 能力换取简洁性 -- 对「YouTube 音频助眠」这个场景来说，这是正确的权衡。
+
+### 未来
+
+Rust DSP 模块已达到生产就绪状态。如果我们扩展到非浏览器音频（Spotify、Apple Music），桌面管线随时可以投入使用。

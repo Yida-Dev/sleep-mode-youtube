@@ -458,3 +458,25 @@ sleep-mode-extension/
   dist/                       # Pre-built output (Chrome-loadable)
   assets/icons/               # Extension icons (16, 48, 128px)
 ```
+
+## 10. Desktop App Exploration
+
+Before building the Chrome extension, we explored a **cross-platform desktop approach** using Tauri (Rust + React) that captures system audio at the OS level. The desktop app is published separately: **[sleep-mode-desktop](https://github.com/Yida-Dev/sleep-mode-desktop)**.
+
+### What we learned
+
+The desktop prototype validated our DSP architecture with an 8-stage pure Rust pipeline (4400+ lines, no external DSP libraries): VocalSeparator, LookaheadLimiter, RmsCompressor, LoudnessNormalizer, SleepEQ, TimeStretch, PitchShift, TruePeakLimiter. Key technical achievements:
+
+- **WSOLA time stretching** with independent speed/pitch control (not possible in browser AudioWorklet's 128-sample blocks)
+- **PitchShift via composition**: TimeStretch + resampling, elegant reuse instead of dedicated algorithm
+- **VocalSeparator without ML**: STFT spectral masking, <1KB code, <5ms latency
+- **macOS Core Audio Taps** (14.2+): System audio capture without virtual drivers
+- **Sub-10ms total latency** verified by unit tests across all 8 stages
+
+### Why extension won
+
+The desktop app requires system-level audio capture (CoreAudio Taps on macOS, WASAPI Loopback + VB-CABLE on Windows), creating significant install friction and unresolved permission issues. The Chrome extension provides direct `<video>` element access with zero permissions, trading DSP power for simplicity -- the right tradeoff for "YouTube audio for sleep".
+
+### Future
+
+The Rust DSP modules are production-ready. If we expand to non-browser audio (Spotify, Apple Music), the desktop pipeline is ready to ship.

@@ -282,6 +282,47 @@ npm run build    # Production build (esbuild IIFE bundles)
 npx tsc --noEmit # Type check only
 ```
 
+## Desktop App Exploration
+
+Before building the Chrome extension, we built a full **cross-platform desktop application** using Tauri (Rust + React) that captures system audio and processes it through an 8-stage pure Rust DSP pipeline. The desktop app is published as a separate repository: **[sleep-mode-desktop](https://github.com/Yida-Dev/sleep-mode-desktop)**.
+
+### What we built
+
+The desktop approach gave us the freedom to implement DSP algorithms that aren't possible in a browser AudioWorklet (limited to 128-sample blocks at 48kHz):
+
+- **8-stage Rust DSP pipeline** (4400+ lines of pure Rust, no external DSP libraries): VocalSeparator, LookaheadLimiter, RmsCompressor, LoudnessNormalizer, SleepEQ, TimeStretch, PitchShift, TruePeakLimiter
+- **WSOLA time stretching**: Proper Waveform Similarity Overlap-Add algorithm with 50% overlap Hann windows, allowing independent speed and pitch control (impossible in the browser where we rely on native `playbackRate`)
+- **PitchShift via composition**: Rather than a dedicated algorithm, pitch shift = TimeStretch(0.841x) + Resample(1.189x) for -3 semitones. Elegant reuse of existing modules
+- **VocalSeparator without ML**: STFT spectral masking with frequency-band crossfades (80-300Hz in, 300-3400Hz vocal, 3400-8000Hz out). Under 1KB of code, < 5ms latency
+- **macOS Core Audio Taps API** (macOS 14.2+): System audio capture without any virtual driver -- no BlackHole, no Soundflower, no kernel extension
+- **Sub-10ms total latency**: Verified by unit test across all 8 pipeline stages
+- **Smooth preset transitions**: Exponential parameter interpolation over ~50ms, zero audible discontinuities
+
+### Why we chose the extension
+
+| Factor | Desktop App | Chrome Extension |
+|--------|------------|-----------------|
+| YouTube audio access | Indirect (system capture) | Direct (`<video>` element) |
+| Install friction | Download + install + permissions | One click |
+| Permission complexity | CoreAudio/WASAPI/virtual drivers | None |
+| DSP capability | Full Rust pipeline, 8 stages | AudioWorklet (JavaScript), 4 stages |
+| Latency | < 10ms | ~15ms |
+
+The Chrome extension trades DSP power for simplicity. For the specific use case of "YouTube audio for sleep", direct element access with zero install friction wins over system-level capture with complex permission setup.
+
+### Unresolved permission issues
+
+The desktop app has significant platform permission challenges that remain unsolved:
+
+- **macOS**: Core Audio Taps requires macOS 14.2+. Aggregate Device creation occasionally fails silently. ScreenCaptureKit entitlements are inconsistently enforced across versions.
+- **Windows**: VB-CABLE virtual audio device must be installed manually (licensing prevents bundling). System audio rerouting via `IPolicyConfig` requires UAC handling. Device change monitoring is not implemented.
+
+These permission issues were a major factor in choosing the Chrome extension form factor for v1.
+
+### Future work
+
+The Rust DSP modules are fully functional and well-tested. If we revisit the desktop form factor (for Spotify, Apple Music, or other non-browser audio sources), the pipeline is ready. The desktop repo is published as a reference implementation and architectural exploration.
+
 ## License
 
 MIT
