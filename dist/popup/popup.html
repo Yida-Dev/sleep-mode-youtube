@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=360">
+  <title>Sleep Mode</title>
+  <link rel="stylesheet" href="popup.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&display=swap"
+        rel="stylesheet">
+</head>
+<body>
+  <!-- Header -->
+  <header class="header">
+    <div class="header-left">
+      <h1 class="app-title">Sleep Mode</h1>
+    </div>
+    <div class="header-right">
+      <span class="status-dot" id="statusDot"></span>
+      <span class="status-text" id="statusText">Standby</span>
+    </div>
+  </header>
+
+  <!-- Main Toggle -->
+  <section class="toggle-section">
+    <button class="toggle-btn" id="toggleBtn" aria-label="Toggle Sleep Mode">
+      <svg class="moon-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+        <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+      </svg>
+    </button>
+    <p class="toggle-label" id="toggleLabel">Tap to activate</p>
+  </section>
+
+  <!-- Presets -->
+  <section class="presets-section">
+    <div class="section-label">Preset</div>
+    <div class="presets-row">
+      <button class="preset-card active" data-preset="sleep">
+        <svg class="preset-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+          <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+        </svg>
+        <span class="preset-name">Sleep</span>
+      </button>
+      <button class="preset-card" data-preset="asmr">
+        <svg class="preset-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+          <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
+          <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+          <line x1="12" y1="19" x2="12" y2="23"/>
+        </svg>
+        <span class="preset-name">ASMR</span>
+      </button>
+      <button class="preset-card" data-preset="podcast">
+        <svg class="preset-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+          <path d="M3 18v-6a9 9 0 0 1 18 0v6"/>
+          <path d="M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3zM3 19a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3z"/>
+        </svg>
+        <span class="preset-name">Podcast</span>
+      </button>
+      <button class="preset-card" data-preset="whitenoise">
+        <svg class="preset-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+          <path d="M2 12h2l3-9 4 18 4-18 3 9h2"/>
+        </svg>
+        <span class="preset-name">Noise</span>
+      </button>
+    </div>
+  </section>
+
+  <!-- Sleep EQ Toggle -->
+  <section class="eq-section">
+    <div class="eq-row">
+      <span class="eq-label">Sleep EQ</span>
+      <button class="eq-toggle" id="eqToggle" aria-label="Toggle Sleep EQ">
+        <span class="eq-toggle-knob"></span>
+      </button>
+    </div>
+  </section>
+
+  <!-- Audio Controls -->
+  <section class="dsp-section">
+    <div class="section-label">Audio Controls</div>
+
+    <!-- Vocal Enhance Toggle -->
+    <div class="eq-row">
+      <span class="eq-label">Vocal Enhance</span>
+      <button class="eq-toggle" id="vocalToggle" aria-label="Toggle Vocal Enhance">
+        <span class="eq-toggle-knob"></span>
+      </button>
+    </div>
+  </section>
+
+  <!-- Metering -->
+  <section class="metering-section">
+    <div class="meter-row">
+      <div class="meter-item">
+        <span class="meter-label">LUFS</span>
+        <span class="meter-value" id="lufsValue">--</span>
+      </div>
+      <div class="meter-divider"></div>
+      <div class="meter-item">
+        <span class="meter-label">Gain Reduction</span>
+        <span class="meter-value" id="grValue">-- dB</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <a href="#" class="footer-link" id="settingsLink">Settings</a>
+    <span class="footer-sep">|</span>
+    <a href="#" class="footer-link" id="aboutLink">About</a>
+  </footer>
+
+  <script src="popup.js"></script>
+</body>
+</html>
