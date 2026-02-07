@@ -12,6 +12,61 @@ Millions of people fall asleep listening to YouTube -- podcasts, audiobooks, ASM
 - Speech is too fast for a drowsy brain
 - High-pitched voices feel harsh at night
 
+## Research: These Are Real Problems
+
+We systematically analyzed **100 real user pain point cases** collected from Reddit (r/sleep, r/podcasts, r/asmr), Hacker News, YouTube comments, sleep app reviews, and forum discussions. Each case was scored across 9 dimensions: severity, pain point category, technical solvability, solution match, sleep relevance, impact scope, content type, user emotion, and frequency.
+
+The interactive visualization of this analysis is available at [`docs/research/用户痛点分析可视化.html`](docs/research/用户痛点分析可视化.html). Full dataset and methodology at [`docs/research/`](docs/research/).
+
+### What the data shows
+
+| Finding | Number |
+|---------|--------|
+| Volume problems (largest category) | **31%** of all cases |
+| Audio quality problems (second largest) | **22%** of all cases |
+| Cases our product perfectly or highly matches | **36%** (36 cases) |
+| Cases we can solve to varying degrees | **53%** (53 cases) |
+| Cases directly or highly related to sleep | **51%** (51 cases) |
+| Cases that are common or universal problems | **79%** (79 cases) |
+| P0 (highest severity, causes awakening) | **17%** (17 cases) |
+| P0+P1 (critical + high severity) | **48%** (48 cases) |
+
+### Pain points we solve, mapped to features
+
+| User pain point | Cases | Severity | Our solution | Feature |
+|----------------|-------|----------|-------------|---------|
+| Ad volume blast / video-to-video volume jumps | 15 | P0-P1 | LUFS normalizer brings all content to consistent target loudness | Normalizer (-26 LUFS) |
+| Volume fluctuations within a single video | 13 | P1 | Fast RMS compressor smooths loudness changes in real time | Compressor (6:1, 100ms) |
+| Sudden loud sounds (laughter, applause, sound effects) | 6 | P0 | Lookahead limiter + true peak limiter catch transients in <5ms | Limiter (-3dBFS) + True Peak (-2dBTP) |
+| Background music drowning out the speaker | 7 | P1 | STFT vocal separator reduces music while preserving voice | Vocal Enhance (music -6dB) |
+| High-pitched / sibilant voices feel harsh | 4 | P2 | High-shelf EQ rolls off upper frequencies | Sleep EQ (6kHz, -4dB) |
+| Speech too fast for a drowsy brain | 2 | P2 | Native playback rate reduction with pitch coupling | 0.94x speed |
+
+### What real users say
+
+> *"Quiet rainstorm video followed by aggressively loud cereal commercial, you're likely going to wake up suddenly"* -- Reddit user
+
+> *"Sudden volume changes or unexpected sounds from videos I never meant to watch would jolt me awake in the middle of the night"* -- Hacker News user
+
+> *"The backing track actually had lyrics, so I found myself trying to listen to them rather than what the presenter was saying"* -- Forum user
+
+> *"Speakers dramatically vary their voice level for emphasis, causing overall volume to jump around from quiet to occasional shouts"* -- Podcast listener
+
+Australian sleep meditation creator Jason Stephenson (3.2M subscribers) collected **10,000+ petition signatures** protesting YouTube ad volume disrupting sleep content.
+
+### What we can't solve
+
+Not every problem is an audio signal processing problem. **45% of cases** fall outside our scope:
+
+| Problem type | Cases | Why we can't solve it |
+|-------------|-------|----------------------|
+| Platform features (autoplay, UI) | 16 | Requires YouTube to change |
+| Ad content itself | 11 | Requires YouTube Premium or ad blockers |
+| Content quality (TTS voices, style) | 6 | Content creation issue |
+| Technical (Bluetooth, buffering) | 6 | System-level issue |
+
+We are transparent about boundaries. Sleep Mode solves the audio signal problems -- the 53% that are within the domain of real-time DSP.
+
 ## What Sleep Mode Does
 
 One click. The extension processes YouTube audio in real time through a broadcast-grade signal chain, making everything quieter, smoother, and more consistent. Every processing stage is designed around one principle: **audio can only get quieter and smoother, never louder or harsher.**

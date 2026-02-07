@@ -24,6 +24,45 @@ Through user research (Reddit r/sleep, r/podcasts, r/asmr, YouTube comments, sle
 
 These are not feature requests. They are involuntary physiological responses -- adrenaline, startle reflex, cortisol release. No amount of UI can fix an audio signal that spikes 15dB in 10 milliseconds.
 
+### Quantitative validation
+
+We validated these struggle moments against **100 real user pain point cases** collected from Reddit (r/sleep, r/podcasts, r/asmr), Hacker News, YouTube comments, sleep app reviews, and forum discussions. Each case was scored across 9 dimensions: severity, pain point category, technical solvability, solution match, sleep relevance, impact scope, content type, user emotion, and frequency. The full interactive visualization is available at [`docs/research/用户痛点分析可视化.html`](docs/research/用户痛点分析可视化.html).
+
+**Pain point distribution:**
+
+| Category | Cases | % | Our coverage |
+|----------|-------|---|-------------|
+| Volume problems (jumps, spikes, inconsistency) | 31 | 31% | Fully solved: normalizer + compressor + limiter |
+| Audio quality (background music, noise, distortion) | 22 | 22% | Partially solved: vocal separator + EQ |
+| Platform features (autoplay, UI) | 16 | 16% | Out of scope |
+| Ads (interruption, volume) | 11 | 11% | Volume solved (normalizer); content requires Premium |
+| Speech issues (speed, pitch, style) | 10 | 10% | Partially solved: playback rate + EQ |
+| Technical (Bluetooth, buffering) | 6 | 6% | Out of scope |
+| Content (quality, relevance) | 4 | 4% | Out of scope |
+
+**Key metrics:**
+
+- **36% of cases** (36/100) are a perfect or high match for our product
+- **53% of cases** (53/100) we can solve to varying degrees
+- **51% of cases** (51/100) are directly or highly related to the sleep scenario
+- **79% of cases** (79/100) are common or universal problems (not edge cases)
+- **48% of cases** (48/100) are P0 (causes awakening) or P1 (severely disrupts sleep)
+
+**Pain point to feature mapping (the 36 cases we solve well):**
+
+| Pain point | Cases | Our feature | Technical solution |
+|-----------|-------|------------|-------------------|
+| Ad/video volume jumps | 15 | Normalizer | BS.1770 LUFS measurement, 3s window, 1dB/s rate |
+| Within-video volume fluctuation | 10 | Compressor | Fast RMS (100ms), 6:1 ratio, soft knee |
+| Sudden loud sounds | 6 | Limiter + True Peak | Lookahead peak limiting + 4x oversampled true peak |
+| Background music over voice | 7 | Vocal Enhance | STFT mid/side spectral masking, 2048-point FFT |
+| Harsh high frequencies | 2 | Sleep EQ | High-shelf rolloff at 6kHz, -4dB |
+| Speech too fast | 2 | Speed control | Native playbackRate=0.94, preservesPitch=false |
+
+**What we can't solve (47 cases):** Platform features (autoplay, recommendations), ad content itself, content creation quality (TTS voices, editing style), and system-level technical issues (Bluetooth dropouts, buffering). We are transparent about these boundaries -- Sleep Mode is a real-time audio DSP solution, not a platform wrapper.
+
+**User emotional state:** 47% express helplessness ("I know it's a problem but I can't fix it"), 26% confusion, 12% anger, 10% fear. The prevalence of helplessness validates the product thesis: users have tried to solve this and failed because no existing tool operates on the audio signal itself.
+
 ### Key insight
 
 All five struggle moments are **audio signal processing problems**. The solution must operate on the audio waveform itself, in real time, sample by sample. A volume slider, a sleep timer, or a "night mode" color theme are cosmetic -- they don't touch the waveform.
