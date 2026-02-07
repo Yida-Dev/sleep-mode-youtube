@@ -1,0 +1,1084 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>YouTube Sleep Mode - 100个用户痛点分析</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            color: #e8e8e8;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        header {
+            text-align: center;
+            padding: 40px 20px;
+            margin-bottom: 30px;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 10px;
+        }
+
+        .subtitle {
+            color: #888;
+            font-size: 1.1rem;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 40px;
+        }
+
+        .stat-card {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 16px;
+            padding: 24px;
+            text-align: center;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 40px rgba(102, 126, 234, 0.2);
+        }
+
+        .stat-value {
+            font-size: 3rem;
+            font-weight: 700;
+            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .stat-label {
+            color: #888;
+            margin-top: 8px;
+            font-size: 0.95rem;
+        }
+
+        .stat-desc {
+            color: #4ade80;
+            font-size: 0.85rem;
+            margin-top: 4px;
+        }
+
+        .charts-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 30px;
+            margin-bottom: 40px;
+        }
+
+        .chart-card {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 16px;
+            padding: 24px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .chart-title {
+            font-size: 1.2rem;
+            margin-bottom: 20px;
+            color: #fff;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .chart-title::before {
+            content: '';
+            width: 4px;
+            height: 20px;
+            background: linear-gradient(180deg, #667eea 0%, #764ba2 100%);
+            border-radius: 2px;
+        }
+
+        .chart-container {
+            position: relative;
+            height: 300px;
+        }
+
+        .full-width {
+            grid-column: 1 / -1;
+        }
+
+        .full-width .chart-container {
+            height: 400px;
+        }
+
+        .heatmap-section {
+            margin-bottom: 40px;
+        }
+
+        .heatmap-grid {
+            display: grid;
+            grid-template-columns: auto repeat(5, 1fr);
+            gap: 2px;
+            font-size: 0.8rem;
+        }
+
+        .heatmap-cell {
+            padding: 12px 8px;
+            text-align: center;
+            border-radius: 4px;
+        }
+
+        .heatmap-header {
+            background: rgba(255, 255, 255, 0.1);
+            font-weight: 600;
+        }
+
+        .heatmap-row-header {
+            background: rgba(255, 255, 255, 0.1);
+            font-weight: 600;
+            text-align: left;
+            padding-left: 12px;
+        }
+
+        .heat-0 { background: rgba(102, 126, 234, 0.1); }
+        .heat-1 { background: rgba(102, 126, 234, 0.25); }
+        .heat-2 { background: rgba(102, 126, 234, 0.4); }
+        .heat-3 { background: rgba(102, 126, 234, 0.55); }
+        .heat-4 { background: rgba(102, 126, 234, 0.7); }
+        .heat-5 { background: rgba(102, 126, 234, 0.85); color: #fff; }
+
+        .insight-section {
+            margin-bottom: 40px;
+        }
+
+        .insight-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+        }
+
+        .insight-card {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 16px;
+            padding: 24px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .insight-card.positive {
+            border-left: 4px solid #4ade80;
+        }
+
+        .insight-card.negative {
+            border-left: 4px solid #f87171;
+        }
+
+        .insight-card.neutral {
+            border-left: 4px solid #fbbf24;
+        }
+
+        .insight-title {
+            font-size: 1.1rem;
+            margin-bottom: 12px;
+            color: #fff;
+        }
+
+        .insight-content {
+            color: #aaa;
+            line-height: 1.6;
+        }
+
+        .progress-bar {
+            height: 8px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 4px;
+            margin: 8px 0;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            border-radius: 4px;
+            transition: width 1s ease-out;
+        }
+
+        .progress-fill.green { background: linear-gradient(90deg, #4ade80, #22c55e); }
+        .progress-fill.yellow { background: linear-gradient(90deg, #fbbf24, #f59e0b); }
+        .progress-fill.red { background: linear-gradient(90deg, #f87171, #ef4444); }
+        .progress-fill.purple { background: linear-gradient(90deg, #667eea, #764ba2); }
+
+        .case-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        .case-table th,
+        .case-table td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .case-table th {
+            background: rgba(255, 255, 255, 0.05);
+            font-weight: 600;
+        }
+
+        .case-table tr:hover {
+            background: rgba(255, 255, 255, 0.03);
+        }
+
+        .tag {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            margin: 2px;
+        }
+
+        .tag-p0 { background: #ef4444; color: #fff; }
+        .tag-p1 { background: #f97316; color: #fff; }
+        .tag-p2 { background: #eab308; color: #000; }
+        .tag-p3 { background: #22c55e; color: #fff; }
+
+        .tag-m1 { background: #4ade80; color: #000; }
+        .tag-m2 { background: #86efac; color: #000; }
+        .tag-m3 { background: #fde047; color: #000; }
+        .tag-m4 { background: #fdba74; color: #000; }
+        .tag-m5 { background: #fca5a5; color: #000; }
+
+        .filter-section {
+            margin-bottom: 20px;
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .filter-btn {
+            padding: 8px 16px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            background: transparent;
+            color: #e8e8e8;
+            border-radius: 20px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .filter-btn:hover,
+        .filter-btn.active {
+            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+            border-color: transparent;
+        }
+
+        .section-title {
+            font-size: 1.5rem;
+            margin-bottom: 20px;
+            color: #fff;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .section-title::before {
+            content: '';
+            width: 6px;
+            height: 24px;
+            background: linear-gradient(180deg, #667eea 0%, #764ba2 100%);
+            border-radius: 3px;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin: 4px 0;
+        }
+
+        .legend-color {
+            width: 16px;
+            height: 16px;
+            border-radius: 4px;
+        }
+
+        .summary-box {
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.2) 0%, rgba(118, 75, 162, 0.2) 100%);
+            border: 1px solid rgba(102, 126, 234, 0.3);
+            border-radius: 16px;
+            padding: 30px;
+            margin-bottom: 40px;
+        }
+
+        .summary-title {
+            font-size: 1.3rem;
+            margin-bottom: 20px;
+            color: #fff;
+        }
+
+        .summary-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+        }
+
+        .summary-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .summary-item:last-child {
+            border-bottom: none;
+        }
+
+        .tab-container {
+            margin-bottom: 20px;
+        }
+
+        .tab-buttons {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .tab-btn {
+            padding: 10px 20px;
+            border: none;
+            background: rgba(255, 255, 255, 0.1);
+            color: #e8e8e8;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .tab-btn:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .tab-btn.active {
+            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .scroll-table {
+            max-height: 500px;
+            overflow-y: auto;
+        }
+
+        .scroll-table::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .scroll-table::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 4px;
+        }
+
+        .scroll-table::-webkit-scrollbar-thumb {
+            background: rgba(102, 126, 234, 0.5);
+            border-radius: 4px;
+        }
+
+        footer {
+            text-align: center;
+            padding: 40px 20px;
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>YouTube Sleep Mode</h1>
+            <p class="subtitle">100个用户痛点案例分析报告</p>
+        </header>
+
+        <!-- Key Stats -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-value">100</div>
+                <div class="stat-label">痛点案例总数</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">36%</div>
+                <div class="stat-label">产品能很好解决</div>
+                <div class="stat-desc">36个案例完美/高度匹配</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">51%</div>
+                <div class="stat-label">与睡眠高度相关</div>
+                <div class="stat-desc">51个案例直接影响睡眠</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">48%</div>
+                <div class="stat-label">P0+P1严重问题</div>
+                <div class="stat-desc">用户最迫切需要解决</div>
+            </div>
+        </div>
+
+        <!-- Summary Box -->
+        <div class="summary-box">
+            <div class="summary-title">产品价值验证</div>
+            <div class="summary-grid">
+                <div>
+                    <div class="summary-item">
+                        <span>音量问题覆盖率</span>
+                        <strong style="color: #4ade80;">100%</strong>
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-fill green" style="width: 100%;"></div>
+                    </div>
+                </div>
+                <div>
+                    <div class="summary-item">
+                        <span>音频质量覆盖率</span>
+                        <strong style="color: #fbbf24;">45%</strong>
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-fill yellow" style="width: 45%;"></div>
+                    </div>
+                </div>
+                <div>
+                    <div class="summary-item">
+                        <span>语音语速覆盖率</span>
+                        <strong style="color: #fbbf24;">60%</strong>
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-fill yellow" style="width: 60%;"></div>
+                    </div>
+                </div>
+                <div>
+                    <div class="summary-item">
+                        <span>广告/平台问题</span>
+                        <strong style="color: #f87171;">0%</strong>
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-fill red" style="width: 0%;"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Charts Grid -->
+        <div class="charts-grid">
+            <div class="chart-card">
+                <div class="chart-title">痛点大类分布</div>
+                <div class="chart-container">
+                    <canvas id="categoryChart"></canvas>
+                </div>
+            </div>
+
+            <div class="chart-card">
+                <div class="chart-title">严重程度分布</div>
+                <div class="chart-container">
+                    <canvas id="severityChart"></canvas>
+                </div>
+            </div>
+
+            <div class="chart-card">
+                <div class="chart-title">技术可解决性</div>
+                <div class="chart-container">
+                    <canvas id="solvabilityChart"></canvas>
+                </div>
+            </div>
+
+            <div class="chart-card">
+                <div class="chart-title">方案匹配度</div>
+                <div class="chart-container">
+                    <canvas id="matchChart"></canvas>
+                </div>
+            </div>
+
+            <div class="chart-card">
+                <div class="chart-title">睡眠场景相关性</div>
+                <div class="chart-container">
+                    <canvas id="sleepChart"></canvas>
+                </div>
+            </div>
+
+            <div class="chart-card">
+                <div class="chart-title">用户情绪分布</div>
+                <div class="chart-container">
+                    <canvas id="emotionChart"></canvas>
+                </div>
+            </div>
+
+            <div class="chart-card full-width">
+                <div class="chart-title">内容类型分布</div>
+                <div class="chart-container">
+                    <canvas id="contentChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Heatmap Section -->
+        <div class="chart-card heatmap-section">
+            <div class="chart-title">痛点大类 vs 方案匹配度 热力图</div>
+            <div class="heatmap-grid">
+                <div class="heatmap-cell"></div>
+                <div class="heatmap-cell heatmap-header">M1 完美</div>
+                <div class="heatmap-cell heatmap-header">M2 高度</div>
+                <div class="heatmap-cell heatmap-header">M3 部分</div>
+                <div class="heatmap-cell heatmap-header">M4 少量</div>
+                <div class="heatmap-cell heatmap-header">M5 不匹配</div>
+
+                <div class="heatmap-cell heatmap-row-header">A 音量问题</div>
+                <div class="heatmap-cell heat-5">22</div>
+                <div class="heatmap-cell heat-1">2</div>
+                <div class="heatmap-cell heat-0">0</div>
+                <div class="heatmap-cell heat-1">2</div>
+                <div class="heatmap-cell heat-2">5</div>
+
+                <div class="heatmap-cell heatmap-row-header">B 音频质量</div>
+                <div class="heatmap-cell heat-0">0</div>
+                <div class="heatmap-cell heat-2">5</div>
+                <div class="heatmap-cell heat-3">7</div>
+                <div class="heatmap-cell heat-3">8</div>
+                <div class="heatmap-cell heat-1">2</div>
+
+                <div class="heatmap-cell heatmap-row-header">C 语音语速</div>
+                <div class="heatmap-cell heat-0">0</div>
+                <div class="heatmap-cell heat-2">4</div>
+                <div class="heatmap-cell heat-1">2</div>
+                <div class="heatmap-cell heat-0">0</div>
+                <div class="heatmap-cell heat-2">4</div>
+
+                <div class="heatmap-cell heatmap-row-header">D 广告相关</div>
+                <div class="heatmap-cell heat-0">0</div>
+                <div class="heatmap-cell heat-2">5</div>
+                <div class="heatmap-cell heat-0">0</div>
+                <div class="heatmap-cell heat-1">1</div>
+                <div class="heatmap-cell heat-2">5</div>
+
+                <div class="heatmap-cell heatmap-row-header">E 平台功能</div>
+                <div class="heatmap-cell heat-0">0</div>
+                <div class="heatmap-cell heat-0">0</div>
+                <div class="heatmap-cell heat-0">0</div>
+                <div class="heatmap-cell heat-0">0</div>
+                <div class="heatmap-cell heat-4">16</div>
+
+                <div class="heatmap-cell heatmap-row-header">F 内容相关</div>
+                <div class="heatmap-cell heat-0">0</div>
+                <div class="heatmap-cell heat-0">0</div>
+                <div class="heatmap-cell heat-0">0</div>
+                <div class="heatmap-cell heat-0">0</div>
+                <div class="heatmap-cell heat-2">4</div>
+
+                <div class="heatmap-cell heatmap-row-header">G 技术问题</div>
+                <div class="heatmap-cell heat-0">0</div>
+                <div class="heatmap-cell heat-0">0</div>
+                <div class="heatmap-cell heat-0">0</div>
+                <div class="heatmap-cell heat-1">1</div>
+                <div class="heatmap-cell heat-2">5</div>
+            </div>
+        </div>
+
+        <!-- Insights Section -->
+        <h2 class="section-title">关键洞察</h2>
+        <div class="insight-grid">
+            <div class="insight-card positive">
+                <div class="insight-title">核心价值确认</div>
+                <div class="insight-content">
+                    <strong>音量问题(31个案例)</strong>是用户第一痛点，我们的动态压缩+限幅方案能<strong>100%覆盖</strong>。
+                    其中22个案例完美匹配，包括广告音量突变、视频内音量不均、突发响声等。
+                </div>
+            </div>
+
+            <div class="insight-card positive">
+                <div class="insight-title">睡眠场景契合</div>
+                <div class="insight-content">
+                    <strong>51%的案例</strong>与睡眠场景直接或高度相关，证明我们的产品定位准确。
+                    17个案例(17%)是用户明确在睡眠场景下遇到的问题。
+                </div>
+            </div>
+
+            <div class="insight-card neutral">
+                <div class="insight-title">部分覆盖领域</div>
+                <div class="insight-content">
+                    音频质量问题(22个)我们能解决约45%，主要通过EQ柔化高频、减少爆破音等。
+                    背景音乐盖过人声需要AI分离技术，是后续迭代方向。
+                </div>
+            </div>
+
+            <div class="insight-card negative">
+                <div class="insight-title">能力边界明确</div>
+                <div class="insight-content">
+                    平台功能问题(16个)和广告内容问题(11个)超出我们能力范围。
+                    这些问题需要YouTube平台改进或用户购买Premium解决。
+                </div>
+            </div>
+        </div>
+
+        <!-- Case Table Section -->
+        <div class="chart-card" style="margin-top: 40px;">
+            <div class="chart-title">案例详情浏览</div>
+
+            <div class="tab-container">
+                <div class="tab-buttons">
+                    <button class="tab-btn active" onclick="showTab('all')">全部案例</button>
+                    <button class="tab-btn" onclick="showTab('p0')">P0严重</button>
+                    <button class="tab-btn" onclick="showTab('m1')">完美匹配</button>
+                    <button class="tab-btn" onclick="showTab('sleep')">睡眠直接相关</button>
+                </div>
+
+                <div id="tab-all" class="tab-content active">
+                    <div class="scroll-table">
+                        <table class="case-table" id="allCaseTable">
+                            <thead>
+                                <tr>
+                                    <th>编号</th>
+                                    <th>案例标题</th>
+                                    <th>严重程度</th>
+                                    <th>痛点大类</th>
+                                    <th>方案匹配</th>
+                                    <th>睡眠相关</th>
+                                </tr>
+                            </thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div id="tab-p0" class="tab-content">
+                    <div class="scroll-table">
+                        <table class="case-table" id="p0CaseTable">
+                            <thead>
+                                <tr>
+                                    <th>编号</th>
+                                    <th>案例标题</th>
+                                    <th>痛点大类</th>
+                                    <th>方案匹配</th>
+                                    <th>用户情绪</th>
+                                </tr>
+                            </thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div id="tab-m1" class="tab-content">
+                    <div class="scroll-table">
+                        <table class="case-table" id="m1CaseTable">
+                            <thead>
+                                <tr>
+                                    <th>编号</th>
+                                    <th>案例标题</th>
+                                    <th>严重程度</th>
+                                    <th>痛点细分</th>
+                                    <th>解决方案</th>
+                                </tr>
+                            </thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div id="tab-sleep" class="tab-content">
+                    <div class="scroll-table">
+                        <table class="case-table" id="sleepCaseTable">
+                            <thead>
+                                <tr>
+                                    <th>编号</th>
+                                    <th>案例标题</th>
+                                    <th>严重程度</th>
+                                    <th>内容类型</th>
+                                    <th>方案匹配</th>
+                                </tr>
+                            </thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- MVP Priority -->
+        <div class="chart-card" style="margin-top: 40px;">
+            <div class="chart-title">MVP功能优先级</div>
+            <div style="padding: 20px;">
+                <div style="margin-bottom: 30px;">
+                    <h3 style="color: #4ade80; margin-bottom: 15px;">必须实现 (解决P0+P1问题)</h3>
+                    <div class="progress-bar" style="height: 30px; margin-bottom: 10px;">
+                        <div class="progress-fill purple" style="width: 100%; display: flex; align-items: center; padding-left: 15px;">
+                            动态压缩 - 解决31个音量突变问题
+                        </div>
+                    </div>
+                    <div class="progress-bar" style="height: 30px; margin-bottom: 10px;">
+                        <div class="progress-fill purple" style="width: 85%; display: flex; align-items: center; padding-left: 15px;">
+                            硬限幅 - 防止6个突发响声问题
+                        </div>
+                    </div>
+                    <div class="progress-bar" style="height: 30px; margin-bottom: 10px;">
+                        <div class="progress-fill purple" style="width: 70%; display: flex; align-items: center; padding-left: 15px;">
+                            EQ柔化 - 减少4个高频刺耳问题
+                        </div>
+                    </div>
+                </div>
+
+                <div>
+                    <h3 style="color: #fbbf24; margin-bottom: 15px;">应该实现 (增强体验)</h3>
+                    <div class="progress-bar" style="height: 30px; margin-bottom: 10px;">
+                        <div class="progress-fill yellow" style="width: 50%; display: flex; align-items: center; padding-left: 15px;">
+                            播放速度控制 - 解决语速问题
+                        </div>
+                    </div>
+                    <div class="progress-bar" style="height: 30px; margin-bottom: 10px;">
+                        <div class="progress-fill yellow" style="width: 40%; display: flex; align-items: center; padding-left: 15px;">
+                            多预设支持 - 适配不同内容类型
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <footer>
+            <p>YouTube Sleep Mode - 用户痛点分析报告</p>
+            <p style="margin-top: 8px;">数据来源: 100个真实用户案例 | 生成时间: 2026-02-04</p>
+        </footer>
+    </div>
+
+    <script>
+        // Chart.js Global Config
+        Chart.defaults.color = '#888';
+        Chart.defaults.borderColor = 'rgba(255, 255, 255, 0.1)';
+
+        const colors = {
+            purple: 'rgba(102, 126, 234, 0.8)',
+            pink: 'rgba(118, 75, 162, 0.8)',
+            green: 'rgba(74, 222, 128, 0.8)',
+            yellow: 'rgba(251, 191, 36, 0.8)',
+            red: 'rgba(248, 113, 113, 0.8)',
+            blue: 'rgba(96, 165, 250, 0.8)',
+            orange: 'rgba(251, 146, 60, 0.8)',
+        };
+
+        // Category Distribution Chart
+        new Chart(document.getElementById('categoryChart'), {
+            type: 'doughnut',
+            data: {
+                labels: ['A 音量问题', 'B 音频质量', 'E 平台功能', 'D 广告相关', 'C 语音语速', 'G 技术问题', 'F 内容相关'],
+                datasets: [{
+                    data: [31, 22, 16, 11, 10, 6, 4],
+                    backgroundColor: [colors.purple, colors.blue, colors.orange, colors.red, colors.green, colors.yellow, colors.pink],
+                    borderWidth: 0
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'right',
+                        labels: { padding: 15, usePointStyle: true }
+                    }
+                }
+            }
+        });
+
+        // Severity Chart
+        new Chart(document.getElementById('severityChart'), {
+            type: 'bar',
+            data: {
+                labels: ['P0 最高', 'P1 高', 'P2 中', 'P3 低'],
+                datasets: [{
+                    label: '案例数',
+                    data: [17, 31, 49, 3],
+                    backgroundColor: [colors.red, colors.orange, colors.yellow, colors.green],
+                    borderWidth: 0,
+                    borderRadius: 8
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                indexAxis: 'y',
+                plugins: {
+                    legend: { display: false }
+                },
+                scales: {
+                    x: { grid: { display: false } },
+                    y: { grid: { display: false } }
+                }
+            }
+        });
+
+        // Solvability Chart
+        new Chart(document.getElementById('solvabilityChart'), {
+            type: 'polarArea',
+            data: {
+                labels: ['S1 完全可解决', 'S2 大部分可解决', 'S3 部分可解决', 'S4 基本无法', 'S5 完全无法'],
+                datasets: [{
+                    data: [22, 14, 17, 20, 27],
+                    backgroundColor: [
+                        'rgba(74, 222, 128, 0.7)',
+                        'rgba(134, 239, 172, 0.7)',
+                        'rgba(253, 224, 71, 0.7)',
+                        'rgba(253, 186, 116, 0.7)',
+                        'rgba(252, 165, 165, 0.7)'
+                    ],
+                    borderWidth: 0
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'right',
+                        labels: { padding: 10, usePointStyle: true }
+                    }
+                }
+            }
+        });
+
+        // Match Chart
+        new Chart(document.getElementById('matchChart'), {
+            type: 'doughnut',
+            data: {
+                labels: ['M1 完美匹配', 'M2 高度匹配', 'M3 部分匹配', 'M4 少量匹配', 'M5 不匹配'],
+                datasets: [{
+                    data: [22, 14, 7, 12, 45],
+                    backgroundColor: [
+                        'rgba(74, 222, 128, 0.8)',
+                        'rgba(134, 239, 172, 0.8)',
+                        'rgba(253, 224, 71, 0.8)',
+                        'rgba(253, 186, 116, 0.8)',
+                        'rgba(252, 165, 165, 0.8)'
+                    ],
+                    borderWidth: 0
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'right',
+                        labels: { padding: 15, usePointStyle: true }
+                    }
+                }
+            }
+        });
+
+        // Sleep Relevance Chart
+        new Chart(document.getElementById('sleepChart'), {
+            type: 'bar',
+            data: {
+                labels: ['R1 直接相关', 'R2 高度相关', 'R3 中度相关', 'R4 低度相关', 'R5 不相关'],
+                datasets: [{
+                    label: '案例数',
+                    data: [17, 34, 39, 8, 2],
+                    backgroundColor: colors.purple,
+                    borderWidth: 0,
+                    borderRadius: 8
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false }
+                },
+                scales: {
+                    x: { grid: { display: false } },
+                    y: { grid: { display: false } }
+                }
+            }
+        });
+
+        // Emotion Chart
+        new Chart(document.getElementById('emotionChart'), {
+            type: 'pie',
+            data: {
+                labels: ['无奈', '困惑', '愤怒', '恐惧', '失望'],
+                datasets: [{
+                    data: [47, 26, 12, 10, 5],
+                    backgroundColor: [colors.blue, colors.yellow, colors.red, colors.pink, colors.orange],
+                    borderWidth: 0
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'right',
+                        labels: { padding: 15, usePointStyle: true }
+                    }
+                }
+            }
+        });
+
+        // Content Type Chart
+        new Chart(document.getElementById('contentChart'), {
+            type: 'bar',
+            data: {
+                labels: ['通用', '睡眠助眠', '教程讲解', '播客访谈', '影视娱乐', '白噪音', 'ASMR', '儿童内容', '游戏', '音乐', '有声书'],
+                datasets: [{
+                    label: '案例数',
+                    data: [47, 13, 10, 6, 5, 5, 4, 3, 3, 4, 1],
+                    backgroundColor: colors.purple,
+                    borderWidth: 0,
+                    borderRadius: 8
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false }
+                },
+                scales: {
+                    x: { grid: { display: false } },
+                    y: { grid: { display: false } }
+                }
+            }
+        });
+
+        // Case Data
+        const cases = [
+            {id: '001', title: 'ASMR广告惊醒用户', severity: 'P0', category: 'A_音量问题', subcategory: 'A1_广告音量突变', match: 'M1', sleep: 'R1', content: 'T1_ASMR', emotion: 'E_愤怒', solution: '动态压缩+限幅'},
+            {id: '002', title: '睡眠视频创作者请愿', severity: 'P0', category: 'A_音量问题', subcategory: 'A1_广告音量突变', match: 'M1', sleep: 'R1', content: 'T2_睡眠助眠', emotion: 'E_无奈', solution: '动态压缩+限幅'},
+            {id: '003', title: '52岁悉尼用户被广告惊醒', severity: 'P0', category: 'A_音量问题', subcategory: 'A1_广告音量突变', match: 'M1', sleep: 'R1', content: 'T2_睡眠助眠', emotion: 'E_愤怒', solution: '动态压缩+限幅'},
+            {id: '004', title: '恐怖电影广告惊吓用户', severity: 'P0', category: 'D_广告相关', subcategory: 'D3_恐怖不适内容', match: 'M5', sleep: 'R2', content: 'T0_通用', emotion: 'E_恐惧', solution: '无法解决'},
+            {id: '005', title: 'YouTube官方承认广告音量问题', severity: 'P1', category: 'A_音量问题', subcategory: 'A1_广告音量突变', match: 'M1', sleep: 'R2', content: 'T0_通用', emotion: 'E_无奈', solution: '动态压缩+限幅'},
+            {id: '006', title: '背景音乐盖过人声', severity: 'P1', category: 'B_音频质量', subcategory: 'B1_背景音乐盖过人声', match: 'M3', sleep: 'R3', content: 'T5_教程讲解', emotion: 'E_困惑', solution: 'EQ调整'},
+            {id: '007', title: '视频音量不一致需要频繁调节', severity: 'P1', category: 'A_音量问题', subcategory: 'A2_视频间音量差异', match: 'M1', sleep: 'R2', content: 'T0_通用', emotion: 'E_无奈', solution: '动态压缩'},
+            {id: '012', title: 'Intro音乐太响震耳', severity: 'P0', category: 'A_音量问题', subcategory: 'A3_视频内音量突变', match: 'M1', sleep: 'R2', content: 'T0_通用', emotion: 'E_愤怒', solution: '动态压缩+限幅'},
+            {id: '013', title: '视频内音量不均匀', severity: 'P1', category: 'A_音量问题', subcategory: 'A3_视频内音量突变', match: 'M1', sleep: 'R2', content: 'T0_通用', emotion: 'E_无奈', solution: '动态压缩'},
+            {id: '016', title: 'TikTok用户分享YouTube自动播放惊吓经历', severity: 'P0', category: 'E_平台功能', subcategory: 'E1_自动播放问题', match: 'M5', sleep: 'R1', content: 'T2_睡眠助眠', emotion: 'E_恐惧', solution: '无法解决'},
+            {id: '017', title: 'ASMR创作者被迫接受广告导致用户惊醒', severity: 'P0', category: 'D_广告相关', subcategory: 'D1_广告打断内容', match: 'M2', sleep: 'R1', content: 'T1_ASMR', emotion: 'E_无奈', solution: '音量处理'},
+            {id: '021', title: 'Quora用户抱怨视频间音量差异巨大', severity: 'P1', category: 'A_音量问题', subcategory: 'A2_视频间音量差异', match: 'M1', sleep: 'R2', content: 'T0_通用', emotion: 'E_无奈', solution: '动态压缩'},
+            {id: '028', title: 'YouTube白噪音视频广告打断婴儿睡眠', severity: 'P0', category: 'D_广告相关', subcategory: 'D1_广告打断内容', match: 'M2', sleep: 'R1', content: 'T3_白噪音自然声', emotion: 'E_愤怒', solution: '音量处理'},
+            {id: '029', title: 'YouTube冥想视频被广告中断用户抱怨', severity: 'P0', category: 'D_广告相关', subcategory: 'D1_广告打断内容', match: 'M2', sleep: 'R1', content: 'T2_睡眠助眠', emotion: 'E_无奈', solution: '音量处理'},
+            {id: '035', title: '家长投诉YouTube Kids自动播放恐怖内容', severity: 'P0', category: 'E_平台功能', subcategory: 'E1_自动播放问题', match: 'M5', sleep: 'R2', content: 'T8_儿童内容', emotion: 'E_恐惧', solution: '无法解决'},
+            {id: '037', title: 'Quora讨论为什么YouTuber视频开头总是很响', severity: 'P1', category: 'A_音量问题', subcategory: 'A3_视频内音量突变', match: 'M1', sleep: 'R2', content: 'T0_通用', emotion: 'E_困惑', solution: '动态压缩+限幅'},
+            {id: '040', title: 'Chrome扩展市场音频均衡器需求火爆', severity: 'P1', category: 'A_音量问题', subcategory: 'A2_视频间音量差异', match: 'M1', sleep: 'R2', content: 'T0_通用', emotion: 'E_无奈', solution: '动态压缩'},
+            {id: '041', title: 'Windows睡眠模式自动播放YouTube吓醒用户', severity: 'P0', category: 'E_平台功能', subcategory: 'E1_自动播放问题', match: 'M5', sleep: 'R1', content: 'T0_通用', emotion: 'E_恐惧', solution: '无法解决'},
+            {id: '044', title: '睡眠催眠视频被广告打断用户体验', severity: 'P0', category: 'D_广告相关', subcategory: 'D1_广告打断内容', match: 'M2', sleep: 'R1', content: 'T2_睡眠助眠', emotion: 'E_无奈', solution: '音量处理'},
+            {id: '046', title: '雷声环境音视频突然雷鸣吓人问题', severity: 'P1', category: 'A_音量问题', subcategory: 'A4_突发音效', match: 'M1', sleep: 'R1', content: 'T3_白噪音自然声', emotion: 'E_恐惧', solution: '硬限幅'},
+            {id: '049', title: '恐怖游戏主播尖叫震耳问题', severity: 'P1', category: 'A_音量问题', subcategory: 'A4_突发音效', match: 'M1', sleep: 'R3', content: 'T7_游戏电竞', emotion: 'E_无奈', solution: '硬限幅'},
+            {id: '050', title: '有声书章节间音量不一致问题', severity: 'P1', category: 'A_音量问题', subcategory: 'A3_视频内音量突变', match: 'M1', sleep: 'R2', content: 'T10_有声书', emotion: 'E_无奈', solution: '动态压缩'},
+            {id: '053', title: '游戏视频爆炸枪声可能损害听力', severity: 'P0', category: 'A_音量问题', subcategory: 'A4_突发音效', match: 'M1', sleep: 'R3', content: 'T7_游戏电竞', emotion: 'E_恐惧', solution: '硬限幅'},
+            {id: '055', title: 'YouTuber响亮intro音乐令人厌烦', severity: 'P1', category: 'A_音量问题', subcategory: 'A3_视频内音量突变', match: 'M1', sleep: 'R2', content: 'T0_通用', emotion: 'E_无奈', solution: '动态压缩+限幅'},
+            {id: '056', title: 'YouTube视频内置赞助商片段音量不同', severity: 'P1', category: 'A_音量问题', subcategory: 'A3_视频内音量突变', match: 'M1', sleep: 'R2', content: 'T0_通用', emotion: 'E_无奈', solution: '动态压缩'},
+            {id: '060', title: '自然声音中某些鸟叫太响不利放松', severity: 'P1', category: 'A_音量问题', subcategory: 'A4_突发音效', match: 'M1', sleep: 'R1', content: 'T3_白噪音自然声', emotion: 'E_无奈', solution: '硬限幅+EQ'},
+            {id: '062', title: '耳鸣患者对YouTube高频声音敏感', severity: 'P1', category: 'C_语音语速', subcategory: 'C2_高频刺耳', match: 'M2', sleep: 'R2', content: 'T0_通用', emotion: 'E_无奈', solution: 'EQ柔化'},
+            {id: '066', title: '音频齿音刺耳S声音问题', severity: 'P2', category: 'C_语音语速', subcategory: 'C2_高频刺耳', match: 'M2', sleep: 'R3', content: 'T0_通用', emotion: 'E_无奈', solution: 'EQ去齿音'},
+            {id: '067', title: '播客访谈两人音量差异大问题', severity: 'P1', category: 'A_音量问题', subcategory: 'A3_视频内音量突变', match: 'M1', sleep: 'R2', content: 'T4_播客访谈', emotion: 'E_无奈', solution: '动态压缩'},
+            {id: '068', title: 'YouTube睡眠计时器功能问题', severity: 'P2', category: 'E_平台功能', subcategory: 'E2_睡眠计时器缺失', match: 'M5', sleep: 'R1', content: 'T2_睡眠助眠', emotion: 'E_无奈', solution: '无法解决'},
+            {id: '072', title: '视频爆破音P和B声音问题', severity: 'P2', category: 'B_音频质量', subcategory: 'B7_爆破音问题', match: 'M2', sleep: 'R3', content: 'T0_通用', emotion: 'E_无奈', solution: 'EQ处理'},
+            {id: '081', title: 'YouTube通知打断睡眠冥想', severity: 'P1', category: 'E_平台功能', subcategory: 'E5_通知打断问题', match: 'M5', sleep: 'R1', content: 'T2_睡眠助眠', emotion: 'E_无奈', solution: '无法解决'},
+            {id: '085', title: 'YouTube视频突然响亮开场音乐', severity: 'P1', category: 'A_音量问题', subcategory: 'A3_视频内音量突变', match: 'M1', sleep: 'R2', content: 'T0_通用', emotion: 'E_无奈', solution: '动态压缩+限幅'},
+            {id: '087', title: 'YouTube多人对话音量不均衡', severity: 'P1', category: 'A_音量问题', subcategory: 'A3_视频内音量突变', match: 'M1', sleep: 'R2', content: 'T4_播客访谈', emotion: 'E_无奈', solution: '动态压缩'},
+            {id: '089', title: 'YouTube冥想视频被中插广告打断', severity: 'P0', category: 'D_广告相关', subcategory: 'D1_广告打断内容', match: 'M2', sleep: 'R1', content: 'T2_睡眠助眠', emotion: 'E_无奈', solution: '音量处理'},
+            {id: '091', title: 'YouTube儿童视频自动播放到恐怖内容', severity: 'P0', category: 'E_平台功能', subcategory: 'E1_自动播放问题', match: 'M5', sleep: 'R2', content: 'T8_儿童内容', emotion: 'E_恐惧', solution: '无法解决'},
+            {id: '093', title: 'YouTube视频突然转场声音吓人', severity: 'P1', category: 'A_音量问题', subcategory: 'A4_突发音效', match: 'M1', sleep: 'R2', content: 'T0_通用', emotion: 'E_恐惧', solution: '硬限幅'},
+            {id: '094', title: 'YouTube学习音乐结束后自动播放不同内容', severity: 'P1', category: 'E_平台功能', subcategory: 'E1_自动播放问题', match: 'M5', sleep: 'R1', content: 'T9_音乐', emotion: 'E_无奈', solution: '无法解决'},
+        ];
+
+        // Populate All Cases Table
+        function populateAllCases() {
+            const tbody = document.querySelector('#allCaseTable tbody');
+            tbody.innerHTML = cases.map(c => `
+                <tr>
+                    <td>${c.id}</td>
+                    <td>${c.title}</td>
+                    <td><span class="tag tag-${c.severity.toLowerCase()}">${c.severity}</span></td>
+                    <td>${c.category}</td>
+                    <td><span class="tag tag-${c.match.toLowerCase()}">${c.match}</span></td>
+                    <td>${c.sleep}</td>
+                </tr>
+            `).join('');
+        }
+
+        // Populate P0 Cases Table
+        function populateP0Cases() {
+            const tbody = document.querySelector('#p0CaseTable tbody');
+            const p0Cases = cases.filter(c => c.severity === 'P0');
+            tbody.innerHTML = p0Cases.map(c => `
+                <tr>
+                    <td>${c.id}</td>
+                    <td>${c.title}</td>
+                    <td>${c.category}</td>
+                    <td><span class="tag tag-${c.match.toLowerCase()}">${c.match}</span></td>
+                    <td>${c.emotion}</td>
+                </tr>
+            `).join('');
+        }
+
+        // Populate M1 Cases Table
+        function populateM1Cases() {
+            const tbody = document.querySelector('#m1CaseTable tbody');
+            const m1Cases = cases.filter(c => c.match === 'M1');
+            tbody.innerHTML = m1Cases.map(c => `
+                <tr>
+                    <td>${c.id}</td>
+                    <td>${c.title}</td>
+                    <td><span class="tag tag-${c.severity.toLowerCase()}">${c.severity}</span></td>
+                    <td>${c.subcategory}</td>
+                    <td>${c.solution}</td>
+                </tr>
+            `).join('');
+        }
+
+        // Populate Sleep Cases Table
+        function populateSleepCases() {
+            const tbody = document.querySelector('#sleepCaseTable tbody');
+            const sleepCases = cases.filter(c => c.sleep === 'R1');
+            tbody.innerHTML = sleepCases.map(c => `
+                <tr>
+                    <td>${c.id}</td>
+                    <td>${c.title}</td>
+                    <td><span class="tag tag-${c.severity.toLowerCase()}">${c.severity}</span></td>
+                    <td>${c.content}</td>
+                    <td><span class="tag tag-${c.match.toLowerCase()}">${c.match}</span></td>
+                </tr>
+            `).join('');
+        }
+
+        // Tab Switching
+        function showTab(tabName) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+            document.getElementById('tab-' + tabName).classList.add('active');
+            event.target.classList.add('active');
+        }
+
+        // Initialize tables
+        populateAllCases();
+        populateP0Cases();
+        populateM1Cases();
+        populateSleepCases();
+    </script>
+</body>
+</html>

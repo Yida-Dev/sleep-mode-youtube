@@ -1,0 +1,2294 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sleep Mode - 高保真交互原型</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            /* 主色调 - 深邃宁静的紫蓝色系 */
+            --primary: #6366f1;
+            --primary-light: #818cf8;
+            --primary-dark: #4f46e5;
+
+            /* 背景色 - 深色主题适合睡眠场景 */
+            --bg-dark: #0f0f1a;
+            --bg-card: #1a1a2e;
+            --bg-card-hover: #252542;
+            --bg-input: #16162a;
+
+            /* 文字色 */
+            --text-primary: #f8fafc;
+            --text-secondary: #94a3b8;
+            --text-muted: #64748b;
+
+            /* 功能色 */
+            --success: #22c55e;
+            --success-bg: rgba(34, 197, 94, 0.15);
+            --warning: #f59e0b;
+            --warning-bg: rgba(245, 158, 11, 0.15);
+            --error: #ef4444;
+            --error-bg: rgba(239, 68, 68, 0.15);
+
+            /* 边框和分割线 */
+            --border: #2d2d4a;
+            --border-light: #3d3d5c;
+
+            /* 阴影 */
+            --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.3);
+            --shadow-md: 0 4px 20px rgba(0, 0, 0, 0.4);
+            --shadow-lg: 0 8px 40px rgba(0, 0, 0, 0.5);
+
+            /* 动画 */
+            --transition-fast: 150ms ease;
+            --transition-normal: 250ms ease;
+            --transition-slow: 400ms ease;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', sans-serif;
+            background: linear-gradient(135deg, #0a0a14 0%, #1a1a2e 50%, #0f0f1a 100%);
+            min-height: 100vh;
+            color: var(--text-primary);
+            line-height: 1.6;
+        }
+
+        /* ===== 导航栏 ===== */
+        .nav {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 60px;
+            background: rgba(15, 15, 26, 0.9);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 24px;
+            z-index: 1000;
+        }
+
+        .nav-logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-weight: 600;
+            font-size: 18px;
+        }
+
+        .nav-logo-icon {
+            width: 32px;
+            height: 32px;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .nav-tabs {
+            display: flex;
+            gap: 8px;
+        }
+
+        .nav-tab {
+            padding: 8px 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all var(--transition-fast);
+            font-size: 14px;
+            color: var(--text-secondary);
+        }
+
+        .nav-tab:hover {
+            background: var(--bg-card);
+            color: var(--text-primary);
+        }
+
+        .nav-tab.active {
+            background: var(--primary);
+            color: white;
+        }
+
+        /* ===== 主内容区 ===== */
+        .main {
+            padding-top: 80px;
+            padding-bottom: 40px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 24px;
+        }
+
+        .section-title {
+            font-size: 24px;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        .section-desc {
+            color: var(--text-secondary);
+            margin-bottom: 32px;
+        }
+
+        /* ===== 页面切换 ===== */
+        .page {
+            display: none;
+        }
+
+        .page.active {
+            display: block;
+        }
+
+        /* ===== 原型展示区 ===== */
+        .prototype-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 32px;
+        }
+
+        .prototype-card {
+            background: var(--bg-card);
+            border-radius: 16px;
+            border: 1px solid var(--border);
+            overflow: hidden;
+        }
+
+        .prototype-header {
+            padding: 16px 20px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .prototype-title {
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        .prototype-badge {
+            font-size: 11px;
+            padding: 4px 8px;
+            border-radius: 4px;
+            background: var(--primary);
+            color: white;
+        }
+
+        .prototype-badge.success {
+            background: var(--success-bg);
+            color: var(--success);
+        }
+
+        .prototype-badge.warning {
+            background: var(--warning-bg);
+            color: var(--warning);
+        }
+
+        .prototype-badge.error {
+            background: var(--error-bg);
+            color: var(--error);
+        }
+
+        .prototype-content {
+            padding: 24px;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            min-height: 400px;
+            background: repeating-linear-gradient(
+                45deg,
+                transparent,
+                transparent 10px,
+                rgba(255,255,255,0.02) 10px,
+                rgba(255,255,255,0.02) 20px
+            );
+        }
+
+        /* ===== 托盘菜单组件 ===== */
+        .tray-menu {
+            width: 280px;
+            background: var(--bg-card);
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            box-shadow: var(--shadow-lg);
+            overflow: hidden;
+        }
+
+        .tray-header {
+            padding: 16px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .tray-icon {
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, var(--primary) 0%, #8b5cf6 100%);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+        }
+
+        .tray-title {
+            font-weight: 600;
+            font-size: 16px;
+        }
+
+        .tray-subtitle {
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+
+        .tray-section {
+            padding: 8px;
+        }
+
+        .tray-divider {
+            height: 1px;
+            background: var(--border);
+            margin: 4px 8px;
+        }
+
+        /* 主开关 */
+        .tray-toggle {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all var(--transition-fast);
+        }
+
+        .tray-toggle:hover {
+            background: var(--bg-card-hover);
+        }
+
+        .tray-toggle-left {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .tray-toggle-icon {
+            width: 36px;
+            height: 36px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+        }
+
+        .tray-toggle-icon.on {
+            background: var(--success-bg);
+            color: var(--success);
+        }
+
+        .tray-toggle-icon.off {
+            background: var(--bg-input);
+            color: var(--text-muted);
+        }
+
+        .tray-toggle-label {
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        .tray-toggle-desc {
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+
+        /* Toggle Switch */
+        .switch {
+            width: 44px;
+            height: 24px;
+            background: var(--bg-input);
+            border-radius: 12px;
+            position: relative;
+            cursor: pointer;
+            transition: all var(--transition-fast);
+        }
+
+        .switch.on {
+            background: var(--success);
+        }
+
+        .switch::after {
+            content: '';
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            background: white;
+            border-radius: 50%;
+            top: 2px;
+            left: 2px;
+            transition: all var(--transition-fast);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+
+        .switch.on::after {
+            transform: translateX(20px);
+        }
+
+        /* 预设选择 */
+        .tray-preset {
+            padding: 12px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all var(--transition-fast);
+        }
+
+        .tray-preset:hover {
+            background: var(--bg-card-hover);
+        }
+
+        .tray-preset-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 8px;
+        }
+
+        .tray-preset-label {
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+
+        .tray-preset-value {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 12px;
+            background: var(--bg-input);
+            border-radius: 8px;
+            font-size: 14px;
+        }
+
+        .tray-preset-icon {
+            font-size: 16px;
+        }
+
+        /* 预设下拉菜单 */
+        .preset-dropdown {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            margin-top: 4px;
+            box-shadow: var(--shadow-md);
+            z-index: 100;
+            display: none;
+        }
+
+        .preset-dropdown.show {
+            display: block;
+        }
+
+        .preset-option {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px;
+            cursor: pointer;
+            transition: all var(--transition-fast);
+        }
+
+        .preset-option:hover {
+            background: var(--bg-card-hover);
+        }
+
+        .preset-option.selected {
+            background: rgba(99, 102, 241, 0.1);
+        }
+
+        .preset-option-icon {
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+        }
+
+        .preset-option-icon.sleep {
+            background: rgba(139, 92, 246, 0.2);
+            color: #a78bfa;
+        }
+
+        .preset-option-icon.asmr {
+            background: rgba(236, 72, 153, 0.2);
+            color: #f472b6;
+        }
+
+        .preset-option-icon.podcast {
+            background: rgba(59, 130, 246, 0.2);
+            color: #60a5fa;
+        }
+
+        .preset-option-icon.whitenoise {
+            background: rgba(34, 197, 94, 0.2);
+            color: #4ade80;
+        }
+
+        .preset-option-name {
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        .preset-option-desc {
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+
+        .preset-option-check {
+            margin-left: auto;
+            color: var(--primary);
+            opacity: 0;
+        }
+
+        .preset-option.selected .preset-option-check {
+            opacity: 1;
+        }
+
+        /* EQ 开关 */
+        .tray-eq {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all var(--transition-fast);
+        }
+
+        .tray-eq:hover {
+            background: var(--bg-card-hover);
+        }
+
+        .tray-eq-left {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .tray-eq-icon {
+            font-size: 16px;
+            color: var(--text-secondary);
+        }
+
+        .tray-eq-label {
+            font-size: 14px;
+        }
+
+        /* 状态指示 */
+        .tray-status {
+            padding: 12px;
+            background: var(--bg-input);
+            border-radius: 8px;
+            margin: 8px;
+        }
+
+        .tray-status-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            font-size: 12px;
+        }
+
+        .tray-status-row + .tray-status-row {
+            margin-top: 8px;
+        }
+
+        .tray-status-label {
+            color: var(--text-secondary);
+        }
+
+        .tray-status-value {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .tray-status-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+        }
+
+        .tray-status-dot.active {
+            background: var(--success);
+            box-shadow: 0 0 8px var(--success);
+        }
+
+        .tray-status-dot.inactive {
+            background: var(--text-muted);
+        }
+
+        /* 菜单项 */
+        .tray-menu-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 10px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all var(--transition-fast);
+            font-size: 13px;
+            color: var(--text-secondary);
+        }
+
+        .tray-menu-item:hover {
+            background: var(--bg-card-hover);
+            color: var(--text-primary);
+        }
+
+        .tray-menu-item-icon {
+            width: 20px;
+            text-align: center;
+        }
+
+        /* ===== 设置面板 ===== */
+        .settings-panel {
+            width: 380px;
+            background: var(--bg-card);
+            border-radius: 16px;
+            border: 1px solid var(--border);
+            box-shadow: var(--shadow-lg);
+            overflow: hidden;
+        }
+
+        .settings-header {
+            padding: 20px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .settings-title {
+            font-size: 18px;
+            font-weight: 600;
+        }
+
+        .settings-close {
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all var(--transition-fast);
+            color: var(--text-secondary);
+        }
+
+        .settings-close:hover {
+            background: var(--bg-card-hover);
+            color: var(--text-primary);
+        }
+
+        .settings-body {
+            padding: 20px;
+            max-height: 500px;
+            overflow-y: auto;
+        }
+
+        .settings-section {
+            margin-bottom: 24px;
+        }
+
+        .settings-section:last-child {
+            margin-bottom: 0;
+        }
+
+        .settings-section-title {
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 12px;
+        }
+
+        /* 滑块 */
+        .slider-group {
+            margin-bottom: 20px;
+        }
+
+        .slider-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 12px;
+        }
+
+        .slider-label {
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        .slider-value {
+            font-size: 14px;
+            color: var(--primary-light);
+            font-weight: 500;
+        }
+
+        .slider-track {
+            position: relative;
+            height: 6px;
+            background: var(--bg-input);
+            border-radius: 3px;
+            cursor: pointer;
+        }
+
+        .slider-fill {
+            position: absolute;
+            height: 100%;
+            background: linear-gradient(90deg, var(--primary) 0%, var(--primary-light) 100%);
+            border-radius: 3px;
+            transition: width var(--transition-fast);
+        }
+
+        .slider-thumb {
+            position: absolute;
+            width: 18px;
+            height: 18px;
+            background: white;
+            border-radius: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+            cursor: grab;
+            transition: transform var(--transition-fast);
+        }
+
+        .slider-thumb:hover {
+            transform: translate(-50%, -50%) scale(1.1);
+        }
+
+        .slider-labels {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 8px;
+            font-size: 11px;
+            color: var(--text-muted);
+        }
+
+        .slider-desc {
+            font-size: 12px;
+            color: var(--text-secondary);
+            margin-top: 8px;
+            padding: 8px 12px;
+            background: var(--bg-input);
+            border-radius: 6px;
+        }
+
+        /* 复选框 */
+        .checkbox-group {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .checkbox-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            padding: 12px;
+            background: var(--bg-input);
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all var(--transition-fast);
+        }
+
+        .checkbox-item:hover {
+            background: var(--bg-card-hover);
+        }
+
+        .checkbox {
+            width: 20px;
+            height: 20px;
+            border: 2px solid var(--border-light);
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all var(--transition-fast);
+            flex-shrink: 0;
+            margin-top: 2px;
+        }
+
+        .checkbox.checked {
+            background: var(--primary);
+            border-color: var(--primary);
+        }
+
+        .checkbox-check {
+            color: white;
+            font-size: 12px;
+            opacity: 0;
+            transform: scale(0);
+            transition: all var(--transition-fast);
+        }
+
+        .checkbox.checked .checkbox-check {
+            opacity: 1;
+            transform: scale(1);
+        }
+
+        .checkbox-content {
+            flex: 1;
+        }
+
+        .checkbox-label {
+            font-size: 14px;
+            font-weight: 500;
+            margin-bottom: 2px;
+        }
+
+        .checkbox-desc {
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+
+        /* 设置底部 */
+        .settings-footer {
+            padding: 16px 20px;
+            border-top: 1px solid var(--border);
+            display: flex;
+            gap: 12px;
+        }
+
+        .btn {
+            flex: 1;
+            padding: 12px 20px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all var(--transition-fast);
+            border: none;
+            outline: none;
+        }
+
+        .btn-secondary {
+            background: var(--bg-input);
+            color: var(--text-secondary);
+        }
+
+        .btn-secondary:hover {
+            background: var(--bg-card-hover);
+            color: var(--text-primary);
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: var(--primary-dark);
+        }
+
+        /* ===== 引导流程 ===== */
+        .onboarding {
+            width: 480px;
+            background: var(--bg-card);
+            border-radius: 20px;
+            border: 1px solid var(--border);
+            box-shadow: var(--shadow-lg);
+            overflow: hidden;
+        }
+
+        .onboarding-progress {
+            height: 4px;
+            background: var(--bg-input);
+        }
+
+        .onboarding-progress-bar {
+            height: 100%;
+            background: linear-gradient(90deg, var(--primary) 0%, var(--primary-light) 100%);
+            transition: width var(--transition-normal);
+        }
+
+        .onboarding-content {
+            padding: 40px;
+            text-align: center;
+        }
+
+        .onboarding-icon {
+            width: 80px;
+            height: 80px;
+            background: linear-gradient(135deg, var(--primary) 0%, #8b5cf6 100%);
+            border-radius: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 40px;
+            margin: 0 auto 24px;
+        }
+
+        .onboarding-title {
+            font-size: 24px;
+            font-weight: 600;
+            margin-bottom: 12px;
+        }
+
+        .onboarding-desc {
+            color: var(--text-secondary);
+            font-size: 15px;
+            line-height: 1.7;
+            margin-bottom: 32px;
+        }
+
+        .onboarding-features {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            text-align: left;
+            margin-bottom: 32px;
+        }
+
+        .onboarding-feature {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 16px;
+            background: var(--bg-input);
+            border-radius: 10px;
+        }
+
+        .onboarding-feature-icon {
+            width: 32px;
+            height: 32px;
+            background: var(--success-bg);
+            color: var(--success);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .onboarding-feature-text {
+            font-size: 14px;
+        }
+
+        .onboarding-footer {
+            padding: 20px 40px 40px;
+            display: flex;
+            gap: 12px;
+        }
+
+        .onboarding-dots {
+            display: flex;
+            justify-content: center;
+            gap: 8px;
+            margin-bottom: 24px;
+        }
+
+        .onboarding-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--border);
+            transition: all var(--transition-fast);
+        }
+
+        .onboarding-dot.active {
+            background: var(--primary);
+            width: 24px;
+            border-radius: 4px;
+        }
+
+        /* macOS 权限提示 */
+        .permission-card {
+            background: var(--bg-input);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 24px;
+        }
+
+        .permission-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 12px;
+        }
+
+        .permission-icon {
+            width: 40px;
+            height: 40px;
+            background: var(--warning-bg);
+            color: var(--warning);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+        }
+
+        .permission-title {
+            font-size: 16px;
+            font-weight: 600;
+        }
+
+        .permission-steps {
+            font-size: 13px;
+            color: var(--text-secondary);
+        }
+
+        .permission-steps ol {
+            margin-left: 16px;
+            margin-top: 8px;
+        }
+
+        .permission-steps li {
+            margin-bottom: 6px;
+        }
+
+        /* ===== 错误状态 ===== */
+        .error-state {
+            text-align: center;
+            padding: 40px;
+        }
+
+        .error-icon {
+            width: 64px;
+            height: 64px;
+            background: var(--error-bg);
+            color: var(--error);
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 32px;
+            margin: 0 auto 20px;
+        }
+
+        .error-title {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        .error-desc {
+            color: var(--text-secondary);
+            font-size: 14px;
+            margin-bottom: 24px;
+        }
+
+        .error-code {
+            font-size: 12px;
+            color: var(--text-muted);
+            font-family: 'SF Mono', Monaco, monospace;
+            padding: 12px;
+            background: var(--bg-input);
+            border-radius: 8px;
+            margin-bottom: 24px;
+        }
+
+        /* ===== 加载状态 ===== */
+        .loading-state {
+            text-align: center;
+            padding: 40px;
+        }
+
+        .loading-spinner {
+            width: 48px;
+            height: 48px;
+            border: 3px solid var(--border);
+            border-top-color: var(--primary);
+            border-radius: 50%;
+            margin: 0 auto 20px;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .loading-text {
+            color: var(--text-secondary);
+            font-size: 14px;
+        }
+
+        .loading-subtext {
+            color: var(--text-muted);
+            font-size: 12px;
+            margin-top: 8px;
+        }
+
+        /* ===== 实时音量指示器 ===== */
+        .volume-meter {
+            height: 4px;
+            background: var(--bg-input);
+            border-radius: 2px;
+            overflow: hidden;
+            margin-top: 8px;
+        }
+
+        .volume-meter-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--success) 0%, var(--warning) 70%, var(--error) 100%);
+            border-radius: 2px;
+            transition: width 50ms ease;
+        }
+
+        /* ===== 通知提示 ===== */
+        .toast {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 16px 20px;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            box-shadow: var(--shadow-lg);
+            transform: translateY(100px);
+            opacity: 0;
+            transition: all var(--transition-normal);
+            z-index: 2000;
+        }
+
+        .toast.show {
+            transform: translateY(0);
+            opacity: 1;
+        }
+
+        .toast-icon {
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .toast-icon.success {
+            background: var(--success-bg);
+            color: var(--success);
+        }
+
+        .toast-content {
+            flex: 1;
+        }
+
+        .toast-title {
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        .toast-desc {
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+
+        /* ===== 快捷键提示 ===== */
+        .kbd {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 24px;
+            height: 22px;
+            padding: 0 6px;
+            background: var(--bg-input);
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            font-size: 11px;
+            font-family: 'SF Mono', Monaco, monospace;
+            color: var(--text-secondary);
+        }
+
+        /* ===== 响应式 ===== */
+        @media (max-width: 768px) {
+            .prototype-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .nav-tabs {
+                display: none;
+            }
+        }
+
+        /* ===== 动画效果 ===== */
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .animate-pulse {
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        .animate-slideIn {
+            animation: slideIn 0.3s ease forwards;
+        }
+
+        /* ===== 自定义滚动条 ===== */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--border);
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--border-light);
+        }
+    </style>
+</head>
+<body>
+    <!-- 导航栏 -->
+    <nav class="nav">
+        <div class="nav-logo">
+            <div class="nav-logo-icon">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+                </svg>
+            </div>
+            <span>Sleep Mode 原型</span>
+        </div>
+        <div class="nav-tabs">
+            <div class="nav-tab active" data-page="tray">托盘菜单</div>
+            <div class="nav-tab" data-page="settings">设置面板</div>
+            <div class="nav-tab" data-page="onboarding">引导流程</div>
+            <div class="nav-tab" data-page="states">边缘状态</div>
+        </div>
+    </nav>
+
+    <main class="main">
+        <div class="container">
+            <!-- 托盘菜单页面 -->
+            <div class="page active" id="page-tray">
+                <h1 class="section-title">系统托盘菜单</h1>
+                <p class="section-desc">主要交互入口，用户通过点击托盘图标打开此菜单</p>
+
+                <div class="prototype-grid">
+                    <!-- 关闭状态 -->
+                    <div class="prototype-card">
+                        <div class="prototype-header">
+                            <span class="prototype-title">关闭状态</span>
+                            <span class="prototype-badge">默认</span>
+                        </div>
+                        <div class="prototype-content">
+                            <div class="tray-menu" id="tray-off">
+                                <div class="tray-header">
+                                    <div class="tray-icon">
+                                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+                                        </svg>
+                                    </div>
+                                    <div>
+                                        <div class="tray-title">Sleep Mode</div>
+                                        <div class="tray-subtitle">音频优化已关闭</div>
+                                    </div>
+                                </div>
+                                <div class="tray-section">
+                                    <div class="tray-toggle" onclick="toggleSleepMode(this)">
+                                        <div class="tray-toggle-left">
+                                            <div class="tray-toggle-icon off">
+                                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                    <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+                                                </svg>
+                                            </div>
+                                            <div>
+                                                <div class="tray-toggle-label">睡眠模式</div>
+                                                <div class="tray-toggle-desc">点击开启音频优化</div>
+                                            </div>
+                                        </div>
+                                        <div class="switch"></div>
+                                    </div>
+                                </div>
+                                <div class="tray-divider"></div>
+                                <div class="tray-section">
+                                    <div class="tray-menu-item">
+                                        <span class="tray-menu-item-icon">
+                                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                <circle cx="12" cy="12" r="3"/>
+                                                <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+                                            </svg>
+                                        </span>
+                                        设置
+                                    </div>
+                                    <div class="tray-menu-item">
+                                        <span class="tray-menu-item-icon">
+                                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                <circle cx="12" cy="12" r="10"/>
+                                                <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/>
+                                                <line x1="12" y1="17" x2="12.01" y2="17"/>
+                                            </svg>
+                                        </span>
+                                        帮助
+                                    </div>
+                                    <div class="tray-menu-item" style="color: var(--error);">
+                                        <span class="tray-menu-item-icon">
+                                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+                                                <polyline points="16 17 21 12 16 7"/>
+                                                <line x1="21" y1="12" x2="9" y2="12"/>
+                                            </svg>
+                                        </span>
+                                        退出
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 开启状态 -->
+                    <div class="prototype-card">
+                        <div class="prototype-header">
+                            <span class="prototype-title">开启状态</span>
+                            <span class="prototype-badge success">运行中</span>
+                        </div>
+                        <div class="prototype-content">
+                            <div class="tray-menu" id="tray-on">
+                                <div class="tray-header">
+                                    <div class="tray-icon">
+                                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+                                        </svg>
+                                    </div>
+                                    <div>
+                                        <div class="tray-title">Sleep Mode</div>
+                                        <div class="tray-subtitle" style="color: var(--success);">音频优化已开启</div>
+                                    </div>
+                                </div>
+                                <div class="tray-section">
+                                    <div class="tray-toggle" onclick="toggleSleepMode(this)">
+                                        <div class="tray-toggle-left">
+                                            <div class="tray-toggle-icon on">
+                                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                    <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+                                                </svg>
+                                            </div>
+                                            <div>
+                                                <div class="tray-toggle-label">睡眠模式</div>
+                                                <div class="tray-toggle-desc">正在优化系统音频</div>
+                                            </div>
+                                        </div>
+                                        <div class="switch on"></div>
+                                    </div>
+                                </div>
+                                <div class="tray-divider"></div>
+                                <div class="tray-section">
+                                    <div class="tray-preset" onclick="togglePresetDropdown(this)">
+                                        <div class="tray-preset-label">当前预设</div>
+                                        <div class="tray-preset-value">
+                                            <span class="tray-preset-icon">
+                                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                    <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+                                                </svg>
+                                            </span>
+                                            睡眠模式
+                                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                <polyline points="6 9 12 15 18 9"/>
+                                            </svg>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="tray-divider"></div>
+                                <div class="tray-section">
+                                    <div class="tray-eq" onclick="toggleEQ(this)">
+                                        <div class="tray-eq-left">
+                                            <span class="tray-eq-icon">
+                                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                    <line x1="4" y1="21" x2="4" y2="14"/>
+                                                    <line x1="4" y1="10" x2="4" y2="3"/>
+                                                    <line x1="12" y1="21" x2="12" y2="12"/>
+                                                    <line x1="12" y1="8" x2="12" y2="3"/>
+                                                    <line x1="20" y1="21" x2="20" y2="16"/>
+                                                    <line x1="20" y1="12" x2="20" y2="3"/>
+                                                </svg>
+                                            </span>
+                                            <span class="tray-eq-label">睡眠 EQ</span>
+                                        </div>
+                                        <div class="checkbox checked">
+                                            <span class="checkbox-check">
+                                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                                                    <polyline points="20 6 9 17 4 12"/>
+                                                </svg>
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="tray-status">
+                                    <div class="tray-status-row">
+                                        <span class="tray-status-label">处理状态</span>
+                                        <span class="tray-status-value">
+                                            <span class="tray-status-dot active"></span>
+                                            实时处理中
+                                        </span>
+                                    </div>
+                                    <div class="tray-status-row">
+                                        <span class="tray-status-label">输出响度</span>
+                                        <span class="tray-status-value">-16 LUFS</span>
+                                    </div>
+                                    <div class="volume-meter">
+                                        <div class="volume-meter-fill" style="width: 35%;"></div>
+                                    </div>
+                                </div>
+                                <div class="tray-divider"></div>
+                                <div class="tray-section">
+                                    <div class="tray-menu-item">
+                                        <span class="tray-menu-item-icon">
+                                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                <circle cx="12" cy="12" r="3"/>
+                                                <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+                                            </svg>
+                                        </span>
+                                        设置
+                                    </div>
+                                    <div class="tray-menu-item" style="color: var(--error);">
+                                        <span class="tray-menu-item-icon">
+                                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+                                                <polyline points="16 17 21 12 16 7"/>
+                                                <line x1="21" y1="12" x2="9" y2="12"/>
+                                            </svg>
+                                        </span>
+                                        退出
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 预设选择展开 -->
+                    <div class="prototype-card">
+                        <div class="prototype-header">
+                            <span class="prototype-title">预设选择展开</span>
+                            <span class="prototype-badge">交互状态</span>
+                        </div>
+                        <div class="prototype-content">
+                            <div class="tray-menu">
+                                <div class="tray-header">
+                                    <div class="tray-icon">
+                                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+                                        </svg>
+                                    </div>
+                                    <div>
+                                        <div class="tray-title">Sleep Mode</div>
+                                        <div class="tray-subtitle" style="color: var(--success);">音频优化已开启</div>
+                                    </div>
+                                </div>
+                                <div class="tray-section" style="position: relative;">
+                                    <div class="tray-preset">
+                                        <div class="tray-preset-label">选择预设</div>
+                                        <div class="tray-preset-value">
+                                            <span class="tray-preset-icon">
+                                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                    <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+                                                </svg>
+                                            </span>
+                                            睡眠模式
+                                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="transform: rotate(180deg);">
+                                                <polyline points="6 9 12 15 18 9"/>
+                                            </svg>
+                                        </div>
+                                    </div>
+                                    <div class="preset-dropdown show" style="position: relative; margin-top: 8px;">
+                                        <div class="preset-option selected">
+                                            <div class="preset-option-icon sleep">
+                                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                    <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+                                                </svg>
+                                            </div>
+                                            <div>
+                                                <div class="preset-option-name">睡眠模式</div>
+                                                <div class="preset-option-desc">中等压缩 + 高频柔化</div>
+                                            </div>
+                                            <span class="preset-option-check">
+                                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                                                    <polyline points="20 6 9 17 4 12"/>
+                                                </svg>
+                                            </span>
+                                        </div>
+                                        <div class="preset-option">
+                                            <div class="preset-option-icon asmr">
+                                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                    <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
+                                                    <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+                                                    <line x1="12" y1="19" x2="12" y2="23"/>
+                                                </svg>
+                                            </div>
+                                            <div>
+                                                <div class="preset-option-name">ASMR 模式</div>
+                                                <div class="preset-option-desc">轻度压缩 + 轻微高频柔化</div>
+                                            </div>
+                                            <span class="preset-option-check">
+                                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                                                    <polyline points="20 6 9 17 4 12"/>
+                                                </svg>
+                                            </span>
+                                        </div>
+                                        <div class="preset-option">
+                                            <div class="preset-option-icon podcast">
+                                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                    <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
+                                                    <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+                                                </svg>
+                                            </div>
+                                            <div>
+                                                <div class="preset-option-name">播客模式</div>
+                                                <div class="preset-option-desc">中等压缩 + 无 EQ</div>
+                                            </div>
+                                            <span class="preset-option-check">
+                                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                                                    <polyline points="20 6 9 17 4 12"/>
+                                                </svg>
+                                            </span>
+                                        </div>
+                                        <div class="preset-option">
+                                            <div class="preset-option-icon whitenoise">
+                                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                                                    <polyline points="14 2 14 8 20 8"/>
+                                                    <line x1="12" y1="18" x2="12" y2="12"/>
+                                                    <line x1="9" y1="15" x2="15" y2="15"/>
+                                                </svg>
+                                            </div>
+                                            <div>
+                                                <div class="preset-option-name">白噪音模式</div>
+                                                <div class="preset-option-desc">轻度压缩 + 无 EQ</div>
+                                            </div>
+                                            <span class="preset-option-check">
+                                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                                                    <polyline points="20 6 9 17 4 12"/>
+                                                </svg>
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 设置面板页面 -->
+            <div class="page" id="page-settings">
+                <h1 class="section-title">设置面板</h1>
+                <p class="section-desc">详细参数调整界面，点击托盘菜单"设置"后弹出</p>
+
+                <div class="prototype-grid">
+                    <!-- 基础设置 -->
+                    <div class="prototype-card">
+                        <div class="prototype-header">
+                            <span class="prototype-title">基础设置</span>
+                            <span class="prototype-badge">免费版</span>
+                        </div>
+                        <div class="prototype-content">
+                            <div class="settings-panel">
+                                <div class="settings-header">
+                                    <span class="settings-title">设置</span>
+                                    <div class="settings-close">
+                                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <line x1="18" y1="6" x2="6" y2="18"/>
+                                            <line x1="6" y1="6" x2="18" y2="18"/>
+                                        </svg>
+                                    </div>
+                                </div>
+                                <div class="settings-body">
+                                    <div class="settings-section">
+                                        <div class="settings-section-title">音频处理</div>
+                                        <div class="slider-group">
+                                            <div class="slider-header">
+                                                <span class="slider-label">压缩强度</span>
+                                                <span class="slider-value">中等</span>
+                                            </div>
+                                            <div class="slider-track">
+                                                <div class="slider-fill" style="width: 50%;"></div>
+                                                <div class="slider-thumb" style="left: 50%;"></div>
+                                            </div>
+                                            <div class="slider-labels">
+                                                <span>轻</span>
+                                                <span>强</span>
+                                            </div>
+                                            <div class="slider-desc">较低的动态压缩，保留更多自然动态</div>
+                                        </div>
+                                        <div class="slider-group">
+                                            <div class="slider-header">
+                                                <span class="slider-label">输出响度</span>
+                                                <span class="slider-value">-16 LUFS</span>
+                                            </div>
+                                            <div class="slider-track">
+                                                <div class="slider-fill" style="width: 60%;"></div>
+                                                <div class="slider-thumb" style="left: 60%;"></div>
+                                            </div>
+                                            <div class="slider-labels">
+                                                <span>-24 LUFS</span>
+                                                <span>-10 LUFS</span>
+                                            </div>
+                                            <div class="slider-desc">推荐睡眠收听，比流媒体标准略低</div>
+                                        </div>
+                                    </div>
+                                    <div class="settings-section">
+                                        <div class="settings-section-title">睡眠 EQ</div>
+                                        <div class="checkbox-group">
+                                            <div class="checkbox-item" onclick="toggleCheckbox(this)">
+                                                <div class="checkbox checked">
+                                                    <span class="checkbox-check">
+                                                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                                                            <polyline points="20 6 9 17 4 12"/>
+                                                        </svg>
+                                                    </span>
+                                                </div>
+                                                <div class="checkbox-content">
+                                                    <div class="checkbox-label">高频柔化</div>
+                                                    <div class="checkbox-desc">减少刺耳的高频，让声音更柔和</div>
+                                                </div>
+                                            </div>
+                                            <div class="checkbox-item" onclick="toggleCheckbox(this)">
+                                                <div class="checkbox checked">
+                                                    <span class="checkbox-check">
+                                                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                                                            <polyline points="20 6 9 17 4 12"/>
+                                                        </svg>
+                                                    </span>
+                                                </div>
+                                                <div class="checkbox-content">
+                                                    <div class="checkbox-label">低频温暖</div>
+                                                    <div class="checkbox-desc">增加低频温暖感，更舒适放松</div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="settings-section">
+                                        <div class="settings-section-title">通用</div>
+                                        <div class="checkbox-group">
+                                            <div class="checkbox-item" onclick="toggleCheckbox(this)">
+                                                <div class="checkbox">
+                                                    <span class="checkbox-check">
+                                                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                                                            <polyline points="20 6 9 17 4 12"/>
+                                                        </svg>
+                                                    </span>
+                                                </div>
+                                                <div class="checkbox-content">
+                                                    <div class="checkbox-label">开机自动启动</div>
+                                                    <div class="checkbox-desc">系统启动时自动运行 Sleep Mode</div>
+                                                </div>
+                                            </div>
+                                            <div class="checkbox-item" onclick="toggleCheckbox(this)">
+                                                <div class="checkbox checked">
+                                                    <span class="checkbox-check">
+                                                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                                                            <polyline points="20 6 9 17 4 12"/>
+                                                        </svg>
+                                                    </span>
+                                                </div>
+                                                <div class="checkbox-content">
+                                                    <div class="checkbox-label">记住上次状态</div>
+                                                    <div class="checkbox-desc">下次启动时恢复之前的开关状态</div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="settings-footer">
+                                    <button class="btn btn-secondary">恢复默认</button>
+                                    <button class="btn btn-primary">确定</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Pro 设置 -->
+                    <div class="prototype-card">
+                        <div class="prototype-header">
+                            <span class="prototype-title">高级设置</span>
+                            <span class="prototype-badge" style="background: linear-gradient(135deg, #f59e0b 0%, #ef4444 100%);">Pro</span>
+                        </div>
+                        <div class="prototype-content">
+                            <div class="settings-panel">
+                                <div class="settings-header">
+                                    <span class="settings-title">高级设置</span>
+                                    <div class="settings-close">
+                                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <line x1="18" y1="6" x2="6" y2="18"/>
+                                            <line x1="6" y1="6" x2="18" y2="18"/>
+                                        </svg>
+                                    </div>
+                                </div>
+                                <div class="settings-body">
+                                    <div class="settings-section">
+                                        <div class="settings-section-title">峰值捕获器</div>
+                                        <div class="slider-group">
+                                            <div class="slider-header">
+                                                <span class="slider-label">阈值</span>
+                                                <span class="slider-value">-3 dBFS</span>
+                                            </div>
+                                            <div class="slider-track">
+                                                <div class="slider-fill" style="width: 70%;"></div>
+                                                <div class="slider-thumb" style="left: 70%;"></div>
+                                            </div>
+                                            <div class="slider-labels">
+                                                <span>-12 dB</span>
+                                                <span>0 dB</span>
+                                            </div>
+                                        </div>
+                                        <div class="slider-group">
+                                            <div class="slider-header">
+                                                <span class="slider-label">Look-ahead</span>
+                                                <span class="slider-value">5 ms</span>
+                                            </div>
+                                            <div class="slider-track">
+                                                <div class="slider-fill" style="width: 50%;"></div>
+                                                <div class="slider-thumb" style="left: 50%;"></div>
+                                            </div>
+                                            <div class="slider-labels">
+                                                <span>1 ms</span>
+                                                <span>10 ms</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="settings-section">
+                                        <div class="settings-section-title">主压缩器</div>
+                                        <div class="slider-group">
+                                            <div class="slider-header">
+                                                <span class="slider-label">压缩比</span>
+                                                <span class="slider-value">2.5:1</span>
+                                            </div>
+                                            <div class="slider-track">
+                                                <div class="slider-fill" style="width: 40%;"></div>
+                                                <div class="slider-thumb" style="left: 40%;"></div>
+                                            </div>
+                                            <div class="slider-labels">
+                                                <span>1:1</span>
+                                                <span>10:1</span>
+                                            </div>
+                                        </div>
+                                        <div class="slider-group">
+                                            <div class="slider-header">
+                                                <span class="slider-label">阈值</span>
+                                                <span class="slider-value">-18 dBFS</span>
+                                            </div>
+                                            <div class="slider-track">
+                                                <div class="slider-fill" style="width: 55%;"></div>
+                                                <div class="slider-thumb" style="left: 55%;"></div>
+                                            </div>
+                                            <div class="slider-labels">
+                                                <span>-30 dB</span>
+                                                <span>0 dB</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="settings-section">
+                                        <div class="settings-section-title">快捷键</div>
+                                        <div class="checkbox-item" style="justify-content: space-between; cursor: default;">
+                                            <div class="checkbox-content">
+                                                <div class="checkbox-label">全局开关</div>
+                                                <div class="checkbox-desc">快速切换睡眠模式</div>
+                                            </div>
+                                            <div style="display: flex; gap: 4px;">
+                                                <span class="kbd">Ctrl</span>
+                                                <span class="kbd">Shift</span>
+                                                <span class="kbd">S</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="settings-footer">
+                                    <button class="btn btn-secondary">恢复默认</button>
+                                    <button class="btn btn-primary">确定</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 引导流程页面 -->
+            <div class="page" id="page-onboarding">
+                <h1 class="section-title">首次使用引导</h1>
+                <p class="section-desc">新用户首次打开应用时的引导流程</p>
+
+                <div class="prototype-grid">
+                    <!-- 欢迎页 -->
+                    <div class="prototype-card">
+                        <div class="prototype-header">
+                            <span class="prototype-title">Step 1: 欢迎</span>
+                            <span class="prototype-badge">引导</span>
+                        </div>
+                        <div class="prototype-content">
+                            <div class="onboarding">
+                                <div class="onboarding-progress">
+                                    <div class="onboarding-progress-bar" style="width: 33%;"></div>
+                                </div>
+                                <div class="onboarding-content">
+                                    <div class="onboarding-icon">
+                                        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+                                        </svg>
+                                    </div>
+                                    <h2 class="onboarding-title">欢迎使用 Sleep Mode</h2>
+                                    <p class="onboarding-desc">让您的音频体验更适合睡眠，不再被突然的音量变化惊醒。</p>
+                                    <div class="onboarding-features">
+                                        <div class="onboarding-feature">
+                                            <div class="onboarding-feature-icon">
+                                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                    <polyline points="20 6 9 17 4 12"/>
+                                                </svg>
+                                            </div>
+                                            <span class="onboarding-feature-text">自动平衡音量，告别手动调节</span>
+                                        </div>
+                                        <div class="onboarding-feature">
+                                            <div class="onboarding-feature-icon">
+                                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                    <polyline points="20 6 9 17 4 12"/>
+                                                </svg>
+                                            </div>
+                                            <span class="onboarding-feature-text">限制突发响声，保护您的睡眠</span>
+                                        </div>
+                                        <div class="onboarding-feature">
+                                            <div class="onboarding-feature-icon">
+                                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                    <polyline points="20 6 9 17 4 12"/>
+                                                </svg>
+                                            </div>
+                                            <span class="onboarding-feature-text">系统级处理，所有应用都生效</span>
+                                        </div>
+                                    </div>
+                                    <div class="onboarding-dots">
+                                        <div class="onboarding-dot active"></div>
+                                        <div class="onboarding-dot"></div>
+                                        <div class="onboarding-dot"></div>
+                                    </div>
+                                </div>
+                                <div class="onboarding-footer">
+                                    <button class="btn btn-secondary">跳过</button>
+                                    <button class="btn btn-primary">继续</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 权限设置 (macOS) -->
+                    <div class="prototype-card">
+                        <div class="prototype-header">
+                            <span class="prototype-title">Step 2: 权限设置 (macOS)</span>
+                            <span class="prototype-badge warning">需要操作</span>
+                        </div>
+                        <div class="prototype-content">
+                            <div class="onboarding">
+                                <div class="onboarding-progress">
+                                    <div class="onboarding-progress-bar" style="width: 66%;"></div>
+                                </div>
+                                <div class="onboarding-content">
+                                    <div class="onboarding-icon" style="background: linear-gradient(135deg, var(--warning) 0%, #f97316 100%);">
+                                        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                                        </svg>
+                                    </div>
+                                    <h2 class="onboarding-title">需要设置音频路由</h2>
+                                    <p class="onboarding-desc">macOS 需要安装虚拟音频设备才能捕获系统音频。</p>
+                                    <div class="permission-card">
+                                        <div class="permission-header">
+                                            <div class="permission-icon">
+                                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                    <path d="M12 2L2 7l10 5 10-5-10-5z"/>
+                                                    <path d="M2 17l10 5 10-5"/>
+                                                    <path d="M2 12l10 5 10-5"/>
+                                                </svg>
+                                            </div>
+                                            <div class="permission-title">安装 BlackHole</div>
+                                        </div>
+                                        <div class="permission-steps">
+                                            <ol>
+                                                <li>点击下方按钮下载 BlackHole</li>
+                                                <li>运行安装程序</li>
+                                                <li>在系统偏好设置中设置音频输出</li>
+                                            </ol>
+                                        </div>
+                                    </div>
+                                    <div class="onboarding-dots">
+                                        <div class="onboarding-dot"></div>
+                                        <div class="onboarding-dot active"></div>
+                                        <div class="onboarding-dot"></div>
+                                    </div>
+                                </div>
+                                <div class="onboarding-footer">
+                                    <button class="btn btn-secondary">稍后设置</button>
+                                    <button class="btn btn-primary">下载 BlackHole</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 完成 -->
+                    <div class="prototype-card">
+                        <div class="prototype-header">
+                            <span class="prototype-title">Step 3: 设置完成</span>
+                            <span class="prototype-badge success">完成</span>
+                        </div>
+                        <div class="prototype-content">
+                            <div class="onboarding">
+                                <div class="onboarding-progress">
+                                    <div class="onboarding-progress-bar" style="width: 100%;"></div>
+                                </div>
+                                <div class="onboarding-content">
+                                    <div class="onboarding-icon" style="background: linear-gradient(135deg, var(--success) 0%, #10b981 100%);">
+                                        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <polyline points="20 6 9 17 4 12"/>
+                                        </svg>
+                                    </div>
+                                    <h2 class="onboarding-title">一切就绪!</h2>
+                                    <p class="onboarding-desc">Sleep Mode 已经准备好了。点击托盘图标即可开启睡眠模式。</p>
+                                    <div class="onboarding-features">
+                                        <div class="onboarding-feature" style="background: rgba(99, 102, 241, 0.1);">
+                                            <div class="onboarding-feature-icon" style="background: rgba(99, 102, 241, 0.2); color: var(--primary-light);">
+                                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                    <circle cx="12" cy="12" r="10"/>
+                                                    <polyline points="12 6 12 12 16 14"/>
+                                                </svg>
+                                            </div>
+                                            <span class="onboarding-feature-text">应用会常驻在系统托盘中</span>
+                                        </div>
+                                        <div class="onboarding-feature" style="background: rgba(99, 102, 241, 0.1);">
+                                            <div class="onboarding-feature-icon" style="background: rgba(99, 102, 241, 0.2); color: var(--primary-light);">
+                                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                    <path d="M18 3a3 3 0 0 0-3 3v12a3 3 0 0 0 3 3 3 3 0 0 0 3-3 3 3 0 0 0-3-3H6a3 3 0 0 0-3 3 3 3 0 0 0 3 3 3 3 0 0 0 3-3V6a3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3h12a3 3 0 0 0 3-3 3 3 0 0 0-3-3z"/>
+                                                </svg>
+                                            </div>
+                                            <span class="onboarding-feature-text">
+                                                快捷键 <span class="kbd" style="margin-left: 8px;">Ctrl</span>
+                                                <span class="kbd">Shift</span>
+                                                <span class="kbd">S</span>
+                                            </span>
+                                        </div>
+                                    </div>
+                                    <div class="onboarding-dots">
+                                        <div class="onboarding-dot"></div>
+                                        <div class="onboarding-dot"></div>
+                                        <div class="onboarding-dot active"></div>
+                                    </div>
+                                </div>
+                                <div class="onboarding-footer">
+                                    <button class="btn btn-primary" style="flex: 1;">开始使用</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 边缘状态页面 -->
+            <div class="page" id="page-states">
+                <h1 class="section-title">边缘状态</h1>
+                <p class="section-desc">各种异常情况和边界条件下的界面表现</p>
+
+                <div class="prototype-grid">
+                    <!-- 加载状态 -->
+                    <div class="prototype-card">
+                        <div class="prototype-header">
+                            <span class="prototype-title">加载中</span>
+                            <span class="prototype-badge">加载</span>
+                        </div>
+                        <div class="prototype-content">
+                            <div class="tray-menu">
+                                <div class="tray-header">
+                                    <div class="tray-icon">
+                                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+                                        </svg>
+                                    </div>
+                                    <div>
+                                        <div class="tray-title">Sleep Mode</div>
+                                        <div class="tray-subtitle">正在初始化...</div>
+                                    </div>
+                                </div>
+                                <div class="loading-state">
+                                    <div class="loading-spinner"></div>
+                                    <div class="loading-text">正在初始化音频引擎</div>
+                                    <div class="loading-subtext">首次启动可能需要几秒钟</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 错误状态 - 音频设备 -->
+                    <div class="prototype-card">
+                        <div class="prototype-header">
+                            <span class="prototype-title">音频设备错误</span>
+                            <span class="prototype-badge error">错误</span>
+                        </div>
+                        <div class="prototype-content">
+                            <div class="tray-menu">
+                                <div class="tray-header">
+                                    <div class="tray-icon" style="background: linear-gradient(135deg, var(--error) 0%, #dc2626 100%);">
+                                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <circle cx="12" cy="12" r="10"/>
+                                            <line x1="12" y1="8" x2="12" y2="12"/>
+                                            <line x1="12" y1="16" x2="12.01" y2="16"/>
+                                        </svg>
+                                    </div>
+                                    <div>
+                                        <div class="tray-title">Sleep Mode</div>
+                                        <div class="tray-subtitle" style="color: var(--error);">音频设备错误</div>
+                                    </div>
+                                </div>
+                                <div class="error-state">
+                                    <div class="error-icon">
+                                        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/>
+                                            <line x1="23" y1="9" x2="17" y2="15"/>
+                                            <line x1="17" y1="9" x2="23" y2="15"/>
+                                        </svg>
+                                    </div>
+                                    <div class="error-title">无法访问音频设备</div>
+                                    <div class="error-desc">请检查音频输出设备是否正常连接，或尝试重启应用。</div>
+                                    <div class="error-code">Error: WASAPI_DEVICE_NOT_FOUND</div>
+                                    <button class="btn btn-primary" style="width: 100%;">重试</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 错误状态 - macOS 权限 -->
+                    <div class="prototype-card">
+                        <div class="prototype-header">
+                            <span class="prototype-title">macOS 权限缺失</span>
+                            <span class="prototype-badge warning">警告</span>
+                        </div>
+                        <div class="prototype-content">
+                            <div class="tray-menu">
+                                <div class="tray-header">
+                                    <div class="tray-icon" style="background: linear-gradient(135deg, var(--warning) 0%, #f97316 100%);">
+                                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+                                            <line x1="12" y1="9" x2="12" y2="13"/>
+                                            <line x1="12" y1="17" x2="12.01" y2="17"/>
+                                        </svg>
+                                    </div>
+                                    <div>
+                                        <div class="tray-title">Sleep Mode</div>
+                                        <div class="tray-subtitle" style="color: var(--warning);">需要设置权限</div>
+                                    </div>
+                                </div>
+                                <div class="error-state">
+                                    <div class="error-icon" style="background: var(--warning-bg); color: var(--warning);">
+                                        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                                        </svg>
+                                    </div>
+                                    <div class="error-title">需要安装虚拟音频设备</div>
+                                    <div class="error-desc">macOS 需要 BlackHole 才能捕获系统音频。</div>
+                                    <button class="btn btn-primary" style="width: 100%; margin-bottom: 8px;">安装 BlackHole</button>
+                                    <button class="btn btn-secondary" style="width: 100%;">查看帮助</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 无音频输出 -->
+                    <div class="prototype-card">
+                        <div class="prototype-header">
+                            <span class="prototype-title">无音频播放</span>
+                            <span class="prototype-badge">空状态</span>
+                        </div>
+                        <div class="prototype-content">
+                            <div class="tray-menu">
+                                <div class="tray-header">
+                                    <div class="tray-icon">
+                                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+                                        </svg>
+                                    </div>
+                                    <div>
+                                        <div class="tray-title">Sleep Mode</div>
+                                        <div class="tray-subtitle" style="color: var(--success);">已开启，待机中</div>
+                                    </div>
+                                </div>
+                                <div class="tray-section">
+                                    <div class="tray-toggle">
+                                        <div class="tray-toggle-left">
+                                            <div class="tray-toggle-icon on">
+                                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                    <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+                                                </svg>
+                                            </div>
+                                            <div>
+                                                <div class="tray-toggle-label">睡眠模式</div>
+                                                <div class="tray-toggle-desc">已开启，等待音频输入</div>
+                                            </div>
+                                        </div>
+                                        <div class="switch on"></div>
+                                    </div>
+                                </div>
+                                <div class="tray-status" style="text-align: center; padding: 24px;">
+                                    <div style="color: var(--text-muted); margin-bottom: 8px;">
+                                        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="opacity: 0.5;">
+                                            <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/>
+                                            <path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"/>
+                                        </svg>
+                                    </div>
+                                    <div style="font-size: 13px; color: var(--text-muted);">当前无音频播放</div>
+                                    <div style="font-size: 12px; color: var(--text-muted); margin-top: 4px;">播放内容后将自动开始处理</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 更新提示 -->
+                    <div class="prototype-card">
+                        <div class="prototype-header">
+                            <span class="prototype-title">版本更新</span>
+                            <span class="prototype-badge" style="background: var(--primary);">新版本</span>
+                        </div>
+                        <div class="prototype-content">
+                            <div class="tray-menu">
+                                <div class="tray-header">
+                                    <div class="tray-icon">
+                                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+                                        </svg>
+                                    </div>
+                                    <div>
+                                        <div class="tray-title">Sleep Mode</div>
+                                        <div class="tray-subtitle" style="color: var(--success);">音频优化已开启</div>
+                                    </div>
+                                </div>
+                                <div class="tray-section">
+                                    <div style="background: rgba(99, 102, 241, 0.1); border: 1px solid rgba(99, 102, 241, 0.3); border-radius: 8px; padding: 12px; margin: 4px;">
+                                        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+                                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--primary-light)" stroke-width="2">
+                                                <circle cx="12" cy="12" r="10"/>
+                                                <line x1="12" y1="16" x2="12" y2="12"/>
+                                                <line x1="12" y1="8" x2="12.01" y2="8"/>
+                                            </svg>
+                                            <span style="font-size: 13px; font-weight: 500;">v1.2.0 可用</span>
+                                        </div>
+                                        <div style="font-size: 12px; color: var(--text-secondary); margin-bottom: 12px;">
+                                            新增 macOS 支持、自定义预设功能
+                                        </div>
+                                        <button class="btn btn-primary" style="width: 100%; padding: 8px;">立即更新</button>
+                                    </div>
+                                </div>
+                                <div class="tray-divider"></div>
+                                <div class="tray-section">
+                                    <div class="tray-toggle">
+                                        <div class="tray-toggle-left">
+                                            <div class="tray-toggle-icon on">
+                                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                    <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+                                                </svg>
+                                            </div>
+                                            <div>
+                                                <div class="tray-toggle-label">睡眠模式</div>
+                                                <div class="tray-toggle-desc">正在优化系统音频</div>
+                                            </div>
+                                        </div>
+                                        <div class="switch on"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Pro 升级提示 -->
+                    <div class="prototype-card">
+                        <div class="prototype-header">
+                            <span class="prototype-title">Pro 升级入口</span>
+                            <span class="prototype-badge" style="background: linear-gradient(135deg, #f59e0b 0%, #ef4444 100%);">营销</span>
+                        </div>
+                        <div class="prototype-content">
+                            <div class="settings-panel" style="width: 360px;">
+                                <div class="settings-header">
+                                    <span class="settings-title">升级到 Pro</span>
+                                    <div class="settings-close">
+                                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <line x1="18" y1="6" x2="6" y2="18"/>
+                                            <line x1="6" y1="6" x2="18" y2="18"/>
+                                        </svg>
+                                    </div>
+                                </div>
+                                <div class="settings-body" style="text-align: center;">
+                                    <div style="width: 64px; height: 64px; background: linear-gradient(135deg, #f59e0b 0%, #ef4444 100%); border-radius: 16px; display: flex; align-items: center; justify-content: center; margin: 0 auto 20px;">
+                                        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
+                                            <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+                                        </svg>
+                                    </div>
+                                    <h3 style="font-size: 20px; font-weight: 600; margin-bottom: 8px;">解锁全部功能</h3>
+                                    <p style="color: var(--text-secondary); font-size: 14px; margin-bottom: 24px;">获取更多预设、自定义参数和高级 EQ 控制</p>
+
+                                    <div style="background: var(--bg-input); border-radius: 12px; padding: 16px; margin-bottom: 16px; text-align: left;">
+                                        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 12px;">
+                                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--success)" stroke-width="2">
+                                                <polyline points="20 6 9 17 4 12"/>
+                                            </svg>
+                                            <span style="font-size: 14px;">ASMR / 播客 / 白噪音预设</span>
+                                        </div>
+                                        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 12px;">
+                                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--success)" stroke-width="2">
+                                                <polyline points="20 6 9 17 4 12"/>
+                                            </svg>
+                                            <span style="font-size: 14px;">自定义压缩器参数</span>
+                                        </div>
+                                        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 12px;">
+                                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--success)" stroke-width="2">
+                                                <polyline points="20 6 9 17 4 12"/>
+                                            </svg>
+                                            <span style="font-size: 14px;">完整睡眠 EQ 控制</span>
+                                        </div>
+                                        <div style="display: flex; align-items: center; gap: 8px;">
+                                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--success)" stroke-width="2">
+                                                <polyline points="20 6 9 17 4 12"/>
+                                            </svg>
+                                            <span style="font-size: 14px;">优先技术支持</span>
+                                        </div>
+                                    </div>
+
+                                    <div style="display: flex; gap: 12px; margin-bottom: 16px;">
+                                        <div style="flex: 1; background: var(--bg-input); border-radius: 12px; padding: 16px; border: 2px solid transparent; cursor: pointer;" onclick="this.style.borderColor='var(--primary)'">
+                                            <div style="font-size: 12px; color: var(--text-secondary); margin-bottom: 4px;">月付</div>
+                                            <div style="font-size: 24px; font-weight: 600;">$4.99</div>
+                                            <div style="font-size: 12px; color: var(--text-muted);">/月</div>
+                                        </div>
+                                        <div style="flex: 1; background: var(--bg-input); border-radius: 12px; padding: 16px; border: 2px solid var(--primary); cursor: pointer; position: relative;">
+                                            <div style="position: absolute; top: -10px; right: 10px; background: var(--success); color: white; font-size: 10px; padding: 2px 8px; border-radius: 4px;">省50%</div>
+                                            <div style="font-size: 12px; color: var(--text-secondary); margin-bottom: 4px;">买断</div>
+                                            <div style="font-size: 24px; font-weight: 600;">$29.99</div>
+                                            <div style="font-size: 12px; color: var(--text-muted);">一次性</div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="settings-footer">
+                                    <button class="btn btn-primary" style="flex: 1; background: linear-gradient(135deg, #f59e0b 0%, #ef4444 100%);">立即升级</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Toast 通知 -->
+    <div class="toast" id="toast">
+        <div class="toast-icon success">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="20 6 9 17 4 12"/>
+            </svg>
+        </div>
+        <div class="toast-content">
+            <div class="toast-title">睡眠模式已开启</div>
+            <div class="toast-desc">正在优化系统音频</div>
+        </div>
+    </div>
+
+    <script>
+        // 页面切换
+        document.querySelectorAll('.nav-tab').forEach(tab => {
+            tab.addEventListener('click', () => {
+                document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+                document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+
+                tab.classList.add('active');
+                document.getElementById('page-' + tab.dataset.page).classList.add('active');
+            });
+        });
+
+        // Toggle 开关
+        function toggleSleepMode(el) {
+            const switchEl = el.querySelector('.switch');
+            const iconEl = el.querySelector('.tray-toggle-icon');
+            const isOn = switchEl.classList.toggle('on');
+
+            iconEl.classList.toggle('on', isOn);
+            iconEl.classList.toggle('off', !isOn);
+
+            // 显示 Toast
+            showToast(isOn ? '睡眠模式已开启' : '睡眠模式已关闭', isOn ? '正在优化系统音频' : '音频处理已停止');
+        }
+
+        // EQ 开关
+        function toggleEQ(el) {
+            const checkbox = el.querySelector('.checkbox');
+            checkbox.classList.toggle('checked');
+        }
+
+        // 复选框
+        function toggleCheckbox(el) {
+            const checkbox = el.querySelector('.checkbox');
+            checkbox.classList.toggle('checked');
+        }
+
+        // 预设下拉菜单
+        function togglePresetDropdown(el) {
+            const dropdown = el.parentElement.querySelector('.preset-dropdown');
+            if (dropdown) {
+                dropdown.classList.toggle('show');
+            }
+        }
+
+        // Toast 显示
+        function showToast(title, desc) {
+            const toast = document.getElementById('toast');
+            toast.querySelector('.toast-title').textContent = title;
+            toast.querySelector('.toast-desc').textContent = desc;
+            toast.classList.add('show');
+
+            setTimeout(() => {
+                toast.classList.remove('show');
+            }, 3000);
+        }
+
+        // 模拟音量变化
+        setInterval(() => {
+            document.querySelectorAll('.volume-meter-fill').forEach(meter => {
+                const randomWidth = 20 + Math.random() * 40;
+                meter.style.width = randomWidth + '%';
+            });
+        }, 500);
+
+        // 初始 Toast 演示
+        setTimeout(() => {
+            showToast('原型加载完成', '可以切换顶部标签查看不同页面');
+        }, 1000);
+    </script>
+</body>
+</html>
