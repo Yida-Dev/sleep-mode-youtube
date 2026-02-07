@@ -57,9 +57,12 @@ export class YouTubeObserver {
   };
 
   private findVideo(): void {
-    const video = document.querySelector<HTMLVideoElement>(
+    // Shorts pages have 2 video elements (active + empty preload placeholder).
+    // Prefer the one with a src attribute (the active video).
+    const videos = document.querySelectorAll<HTMLVideoElement>(
       "video.html5-main-video, video.video-stream"
     );
+    const video = Array.from(videos).find((v) => v.src) ?? videos[0] ?? null;
     if (video && video !== this.currentVideo) {
       this.currentVideo = video;
       this.callbacks.onVideoFound(video);

@@ -25,6 +25,7 @@ async function findYouTubeTabs(): Promise<chrome.tabs.Tab[]> {
   return tabs.filter(
     (t) =>
       t.url?.includes("youtube.com/watch") ||
+      t.url?.includes("youtube.com/shorts") ||
       t.url?.includes("music.youtube.com")
   );
 }
@@ -56,6 +57,7 @@ async function sendToActiveYouTubeTab(
   if (
     activeTab?.id &&
     (activeTab.url?.includes("youtube.com/watch") ||
+      activeTab.url?.includes("youtube.com/shorts") ||
       activeTab.url?.includes("music.youtube.com"))
   ) {
     try {
