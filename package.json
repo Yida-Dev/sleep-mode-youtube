@@ -1,0 +1,18 @@
+{
+  "name": "sleep-mode-extension",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Chrome extension to optimize YouTube audio for sleep listening",
+  "scripts": {
+    "build": "tsx build.config.ts",
+    "dev": "tsx build.config.ts --watch",
+    "clean": "rm -rf dist",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@types/chrome": "^0.0.268",
+    "esbuild": "^0.21.0",
+    "tsx": "^4.19.0",
+    "typescript": "^5.5.0"
+  }
+}

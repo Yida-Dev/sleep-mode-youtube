@@ -1,0 +1,51 @@
+{
+  "manifest_version": 3,
+  "name": "Sleep Mode for YouTube",
+  "version": "1.0.0",
+  "description": "Optimize YouTube audio for sleep listening",
+  "permissions": [
+    "storage",
+    "activeTab",
+    "tabs"
+  ],
+  "host_permissions": [
+    "https://www.youtube.com/*",
+    "https://music.youtube.com/*"
+  ],
+  "background": {
+    "service_worker": "dist/background/service-worker.js",
+    "type": "module"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "https://www.youtube.com/*",
+        "https://music.youtube.com/*"
+      ],
+      "js": ["dist/content/content-script.js"],
+      "run_at": "document_idle"
+    }
+  ],
+  "action": {
+    "default_popup": "dist/popup/popup.html",
+    "default_icon": {
+      "16": "assets/icons/icon-16.png",
+      "48": "assets/icons/icon-48.png",
+      "128": "assets/icons/icon-128.png"
+    }
+  },
+  "web_accessible_resources": [
+    {
+      "resources": [
+        "dist/worklet/sleep-processor.js",
+        "dist/worklet/vocal-processor.js"
+      ],
+      "matches": ["https://www.youtube.com/*", "https://music.youtube.com/*"]
+    }
+  ],
+  "icons": {
+    "16": "assets/icons/icon-16.png",
+    "48": "assets/icons/icon-48.png",
+    "128": "assets/icons/icon-128.png"
+  }
+}
