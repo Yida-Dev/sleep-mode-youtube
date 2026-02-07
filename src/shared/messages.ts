@@ -32,6 +32,7 @@ export type WorkletOutboundMessage = {
   type: "METERING";
   lufs: number;
   gainReductionDb: number;
+  inputPeakDb: number;
 };
 
 // -- Vocal worklet messages --

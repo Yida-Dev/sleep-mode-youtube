@@ -89,6 +89,7 @@ export interface PresetConfig {
 export interface MeteringData {
   currentLufs: number;
   gainReductionDb: number;
+  inputPeakDb: number;
   timestamp: number;
 }
 

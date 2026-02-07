@@ -91,6 +91,16 @@ async function initPipeline(video: HTMLVideoElement): Promise<void> {
     attachedVideos.add(video);
     pipelineReady = true;
 
+    // Diagnostic logging
+    console.log("[Sleep Mode] Pipeline created", {
+      audioContextState: pipeline.ctx.state,
+      sampleRate: pipeline.ctx.sampleRate,
+      videoSrc: video.src?.substring(0, 80),
+      videoCrossOrigin: video.crossOrigin,
+      videoReadyState: video.readyState,
+      videoPaused: video.paused,
+    });
+
     // Apply playback rate (pitch via native resampling)
     applyPlaybackRate();
 
@@ -119,10 +129,20 @@ async function initPipeline(video: HTMLVideoElement): Promise<void> {
       pipeline.bypass();
     }
 
-    // Metering -> relay to popup
+    // Metering -> relay to popup + diagnostic
+    let meteringLogCount = 0;
     pipeline.onMetering((data) => {
       if (enabled) {
         sendToBackground({ type: "METERING", data });
+        // Log first 5 metering events to diagnose input signal level
+        if (meteringLogCount < 5) {
+          meteringLogCount++;
+          console.log("[Sleep Mode] Metering", {
+            inputPeakDb: data.inputPeakDb.toFixed(1),
+            lufs: data.currentLufs.toFixed(1),
+            gainReduction: data.gainReductionDb.toFixed(1),
+          });
+        }
       }
     });
 

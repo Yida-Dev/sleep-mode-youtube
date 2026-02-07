@@ -138,6 +138,7 @@ export async function buildPipeline(
       meteringCallback({
         currentLufs: e.data.lufs,
         gainReductionDb: e.data.gainReductionDb,
+        inputPeakDb: e.data.inputPeakDb,
         timestamp: Date.now(),
       });
     }

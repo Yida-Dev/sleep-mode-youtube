@@ -740,7 +740,13 @@ class SleepProcessor extends AudioWorkletProcessor {
     const outR = output[1] || output[0];
     const frames = left.length;
 
+    let maxInputSample = 0;
+
     for (let i = 0; i < frames; i++) {
+      const absL = Math.abs(left[i]);
+      const absR = Math.abs(right[i]);
+      if (absL > maxInputSample) maxInputSample = absL;
+      if (absR > maxInputSample) maxInputSample = absR;
       // 1. Normalizer: K-weighting + LUFS measurement + auto gain (slow, long-term)
       let [l, r] = this.normalizer.processFrame(left[i], right[i]);
 
@@ -770,6 +776,10 @@ class SleepProcessor extends AudioWorkletProcessor {
           this.compressor.gainReductionDb() +
           this.limiter.gainReductionDb() +
           this.truePeak.gainReductionDb(),
+        inputPeakDb:
+          maxInputSample > 0
+            ? 20 * Math.log10(maxInputSample)
+            : -Infinity,
       });
     }
 

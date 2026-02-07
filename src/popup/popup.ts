@@ -22,6 +22,7 @@ const toggleLabel = $("#toggleLabel") as HTMLElement;
 const eqToggle = $("#eqToggle") as HTMLButtonElement;
 const lufsValue = $("#lufsValue") as HTMLElement;
 const grValue = $("#grValue") as HTMLElement;
+const inputPeakValue = $("#inputPeakValue") as HTMLElement;
 const presetCards = $$(".preset-card") as NodeListOf<HTMLButtonElement>;
 const vocalToggle = $("#vocalToggle") as HTMLButtonElement;
 
@@ -34,6 +35,7 @@ interface PopupState {
   vocalEnhance: boolean;
   currentLufs: number | null;
   gainReductionDb: number | null;
+  inputPeakDb: number | null;
 }
 
 const state: PopupState = {
@@ -43,6 +45,7 @@ const state: PopupState = {
   vocalEnhance: false,
   currentLufs: null,
   gainReductionDb: null,
+  inputPeakDb: null,
 };
 
 // --- Render ---
@@ -78,6 +81,11 @@ function render(): void {
     state.gainReductionDb !== null
       ? `${state.gainReductionDb.toFixed(1)} dB`
       : "-- dB";
+
+  inputPeakValue.textContent =
+    state.inputPeakDb !== null && isFinite(state.inputPeakDb)
+      ? `${state.inputPeakDb.toFixed(1)} dB`
+      : "-inf dB";
 }
 
 // --- Messaging ---
@@ -108,6 +116,7 @@ chrome.runtime.onMessage.addListener((msg: ContentToPopupMessage) => {
   if (msg.type === "METERING") {
     state.currentLufs = msg.data.currentLufs;
     state.gainReductionDb = msg.data.gainReductionDb;
+    state.inputPeakDb = msg.data.inputPeakDb;
     render();
   } else if (msg.type === "STATUS") {
     state.enabled = msg.data.enabled;
@@ -127,6 +136,7 @@ function onToggle(): void {
   if (!state.enabled) {
     state.currentLufs = null;
     state.gainReductionDb = null;
+    state.inputPeakDb = null;
   }
   render();
 }
